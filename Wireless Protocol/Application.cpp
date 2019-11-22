@@ -10,7 +10,7 @@
 -- Provides a high-level GUI with menu buttons for users to access and use communication functions
 --
 --
--- PROGRAM: Dumb Terminal
+-- PROGRAM: Dumb Terminalj
 --
 -- FUNCTIONS:
 --				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
