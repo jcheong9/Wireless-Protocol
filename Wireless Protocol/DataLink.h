@@ -3,11 +3,10 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#define DWORD_SIZE 1017;
 using namespace std;
-int packetizeFile(string filePath);
+bool packetizeFile(string filePath);
 struct DataLink {
-	vector<char [1024]>* uploadedFrames;
+	vector<char*>* uploadedFrames;
 };
 
 extern DataLink* dataLink;
