@@ -10,7 +10,7 @@
 -- Provides a high-level GUI with menu buttons for users to access and use communication functions
 --
 --
--- PROGRAM: Dumb Terminalj
+-- PROGRAM: Dumb Terminal
 --
 -- FUNCTIONS:
 --				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
@@ -86,7 +86,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	data->hwnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
 		610, 400, NULL, NULL, hInst, NULL);
-	setMenuButton(data->hwnd, IDM_CONNECT, MF_GRAYED);
+	//setMenuButton(data->hwnd, IDM_CONNECT, MF_GRAYED);
+	setMenuButton(data->hwnd, IDM_DISCONNECT, MF_GRAYED);
+
 	ShowWindow(data->hwnd, nCmdShow);
 	UpdateWindow(data->hwnd);
 
