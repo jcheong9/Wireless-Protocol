@@ -67,6 +67,20 @@ int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	return 0;
 }
 
+void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd) {
+	DWORD threadSendId;
+	DWORD threadReceiveId;
+	if (data->connected == false) {
+		data->connected = true;
+		if (receiveThread == NULL && sendThread == NULL) {
+			//sendThread = CreateThread(NULL, 0, ThreadSendProc, &data, 0, &threadSendId);
+			//receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &data, 0, &threadReceiveId);
+		}
+		setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
+		setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
+	}
+}
+
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WndProc
@@ -98,7 +112,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	OVERLAPPED o1 = { 0 };
 	HANDLE receiveThread = NULL;
 	HANDLE sendThread = NULL;
-	DWORD threadId;
+
 
 	switch (Message)
 	{
@@ -120,15 +134,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 			break;
 		case IDM_CONNECT:
-			if (data->connected == false) {
-				data->connected = true;
-				if (receiveThread == NULL && sendThread == NULL) {
-					//sendThread = CreateThread(NULL, 0, ThreadSendProc, &data, 0, &threadId);
-					//receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &data, 0, &threadId);
-				}
-					setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
-					setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
-			}
+			Connect( receiveThread,  sendThread, hwnd);
 			break;
 		case IDM_UPLOADFILE:
 			ZeroMemory(&ofn, sizeof(ofn));
