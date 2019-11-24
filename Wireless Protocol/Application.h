@@ -12,7 +12,7 @@ struct Data {
 	bool connected;
 };
 
-extern Data * data;
+extern Data * wpData;
 
 void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);

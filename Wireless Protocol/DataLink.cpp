@@ -1,4 +1,8 @@
 #include "DataLink.h"
+
+#ifndef DATALINK_H
+#define DATALINK_H
+
 DataLink* dataLink = new DataLink();
 int packetizeFile(string filePath) {
 	dataLink->uploadedFrames = new vector<char[1024]>();
@@ -12,3 +16,5 @@ int packetizeFile(string filePath) {
 	}
 	return 1;
 }
+
+#endif
