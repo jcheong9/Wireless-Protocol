@@ -88,11 +88,19 @@ void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd) {
 	if (wpData->connected == false) {
 		wpData->connected = true;
 		if (receiveThread == NULL && sendThread == NULL) {
-			//sendThread = CreateThread(NULL, 0, ThreadSendProc, &data, 0, &threadSendId);
-			//receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &data, 0, &threadReceiveId);
+			sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadSendId);
+			receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &wpData, 0, &threadReceiveId);
 		}
 		setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
 		setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
+	}
+}
+
+void Disconnect(HWND hwnd) {
+	if (wpData->connected == true) {
+		wpData->connected = false;
+		setMenuButton(hwnd, IDM_DISCONNECT, MF_GRAYED);
+		setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
 	}
 }
 
@@ -152,6 +160,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			Connect( receiveThread,  sendThread, hwnd);
 			break;
 
+
 		case IDM_UPLOADFILE:
 			if (addFile()) {
 				if (packetizeFile(ofn.lpstrFile) != 1) {
@@ -162,16 +171,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);
 			}
 
-			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 
-			
+			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
 		case IDM_DISCONNECT:
-			if (wpData->connected == true) {
-				wpData->connected = false;
-					setMenuButton(hwnd, IDM_DISCONNECT, MF_GRAYED);
-					setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
-			}
+			Disconnect(hwnd);
 			break;
 		case IDM_HELP:
 			MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""), 
