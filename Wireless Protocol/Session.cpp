@@ -109,7 +109,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				ConfigurePort(hwnd, data->hComm, TEXT("COM1"));
 			}
 			break;
-		case IDM_COM2:
+		case IDM_SETTINGS:
 			if (data->hComm == NULL) {
 				data->hComm = OpenPort(TEXT("COM2"));
 				ConfigurePort(hwnd, data->hComm, TEXT("COM2"));
@@ -122,7 +122,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				if (readThread == NULL) {
 					readThread = CreateThread(NULL, 0, ReadFunc, &data, 0, &threadId);
 					setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
+					setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
+
 				}
+			}
+			break;
+		case IDM_UPLOADFILE:
+			if (data->connected == false) {
+				data->connected = true;
+				if (readThread == NULL) {
+					readThread = CreateThread(NULL, 0, ReadFunc, &data, 0, &threadId);
+					setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
+					setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
+
+				}
+			}
+			break;
+		case IDM_DISCONNECT:
+			if (data->connected == true) {
+				data->connected = false;
+					setMenuButton(hwnd, IDM_DISCONNECT, MF_GRAYED);
+					setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
 			}
 			break;
 		case IDM_HELP:
