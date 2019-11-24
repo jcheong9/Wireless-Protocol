@@ -49,7 +49,7 @@
 
 HANDLE OpenPort(LPCWSTR lpszCommName) {
 	HANDLE hComm;
-	hComm = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
+	hComm = CreateFile((LPCSTR) lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
 		NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	if (hComm == INVALID_HANDLE_VALUE)
 	{

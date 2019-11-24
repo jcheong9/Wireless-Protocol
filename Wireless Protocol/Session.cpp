@@ -51,8 +51,14 @@
 -- NOTES:
 -- 
 ----------------------------------------------------------------------------------------------------------------------*/
+OPENFILENAME ofn;
+// a another memory buffer to contain the file name
+char szFile[1000];
 
-int ConfigurePort(HWND hwnd, HANDLE hComm, LPCWSTR lpszCommName) {
+
+
+
+int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	COMMCONFIG cc;
 	cc.dwSize = sizeof(COMMCONFIG);
 	cc.wVersion = 0x100;
@@ -101,7 +107,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		{
 		case IDM_COM1:
 			if (data->hComm == NULL) {
-				data->hComm = OpenPort(TEXT("COM1"));
+				data->hComm = OpenPort((LPCWSTR) "COM1");
 				ConfigurePort(hwnd, data->hComm, TEXT("COM1"));
 				setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
 			}
@@ -109,12 +115,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				ConfigurePort(hwnd, data->hComm, TEXT("COM1"));
 			}
 			break;
+
 		case IDM_SETTINGS:
-			if (data->hComm == NULL) {
-				data->hComm = OpenPort(TEXT("COM2"));
-				ConfigurePort(hwnd, data->hComm, TEXT("COM2"));
-				setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
-			}
+
 			break;
 		case IDM_CONNECT:
 			if (data->connected == false) {
@@ -128,15 +131,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		case IDM_UPLOADFILE:
-			if (data->connected == false) {
-				data->connected = true;
-				if (readThread == NULL) {
-					readThread = CreateThread(NULL, 0, ReadFunc, &data, 0, &threadId);
-					setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
-					setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
+			ZeroMemory(&ofn, sizeof(ofn));
+			ofn.lStructSize = sizeof(ofn);
+			ofn.hwndOwner = NULL;
+			ofn.lpstrFile =  szFile;
+			ofn.lpstrFile[0] = '\0';
+			ofn.nMaxFile = sizeof(szFile);
+			ofn.lpstrFilter = _TEXT("All\0*.*\0Text\0*.TXT\0");
+			ofn.nFilterIndex = 1;
+			ofn.lpstrFileTitle = NULL;
+			ofn.nMaxFileTitle = 0;
+			ofn.lpstrInitialDir = NULL;
+			ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-				}
-			}
+			GetOpenFileNameA((LPOPENFILENAMEA) &ofn);
+
+
+			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
+
+			
 			break;
 		case IDM_DISCONNECT:
 			if (data->connected == true) {
@@ -174,7 +187,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 	case WM_PAINT:		// Process a repaint message
 		hdc = BeginPaint(hwnd, &paintstruct); // Acquire DC
-		TextOut(hdc, 0, 0, (LPCWSTR)str, strlen(str)); // output character
+		TextOut(hdc, 0, 0, str, strlen(str)); // output character
 		EndPaint(hwnd, &paintstruct); // Release DC
 		break;
 
