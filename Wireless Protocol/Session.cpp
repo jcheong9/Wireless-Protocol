@@ -1,8 +1,10 @@
-#include <windows.h>
+//#include <windows.h>
 #include "Physical.h"
-#include <tchar.h>
 #include "DumbMenu.h"
 #include "Application.h"
+#include "DataLink.h"
+OPENFILENAME ofn;
+char szFile[1000];
 
 /*------------------------------------------------------------------------------------------------------------------
 -- SOURCE FILE: Session.c - A Windows application that will act as a dumb terminal
@@ -30,7 +32,23 @@
 -- 
 ----------------------------------------------------------------------------------------------------------------------*/
 
+boolean addFile() {
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = NULL;
+	ofn.lpstrFile = szFile;
+	ofn.lpstrFile[0] = '\0';
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = _TEXT("All\0*.*\0Text\0*.TXT\0");
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
+	GetOpenFileNameA((LPOPENFILENAMEA)&ofn);
+	return true;
+}
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: ConfigurePort
 --
@@ -51,11 +69,6 @@
 -- NOTES:
 -- 
 ----------------------------------------------------------------------------------------------------------------------*/
-OPENFILENAME ofn;
-// a another memory buffer to contain the file name
-char szFile[1000];
-
-
 
 
 int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
@@ -69,6 +82,22 @@ int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	}
 	return 0;
 }
+
+void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd) {
+	DWORD threadSendId;
+	DWORD threadReceiveId;
+	if (wpData->connected == false) {
+		wpData->connected = true;
+		if (receiveThread == NULL && sendThread == NULL) {
+			//sendThread = CreateThread(NULL, 0, ThreadSendProc, &data, 0, &threadSendId);
+			//receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &data, 0, &threadReceiveId);
+		}
+		setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
+		setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
+	}
+}
+
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WndProc
 --
@@ -97,8 +126,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	HDC hdc;
 	PAINTSTRUCT paintstruct;
 	OVERLAPPED o1 = { 0 };
-	HANDLE readThread = NULL;
-	DWORD threadId;
+	HANDLE receiveThread = NULL;
+	HANDLE sendThread = NULL;
+
 
 	switch (Message)
 	{
@@ -106,13 +136,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam))
 		{
 		case IDM_COM1:
-			if (data->hComm == NULL) {
-				data->hComm = OpenPort((LPCWSTR) "COM1");
-				ConfigurePort(hwnd, data->hComm, TEXT("COM1"));
+			if (wpData->hComm == NULL) {
+				wpData->hComm = OpenPort((LPCWSTR) "COM1");
+				ConfigurePort(hwnd, wpData->hComm, TEXT("COM1"));
 				setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
 			}
 			else {
-				ConfigurePort(hwnd, data->hComm, TEXT("COM1"));
+				ConfigurePort(hwnd, wpData->hComm, TEXT("COM1"));
 			}
 			break;
 
@@ -120,40 +150,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 			break;
 		case IDM_CONNECT:
-			if (data->connected == false) {
-				data->connected = true;
-				if (readThread == NULL) {
-					readThread = CreateThread(NULL, 0, ReadFunc, &data, 0, &threadId);
-					setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
-					setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
 
-				}
-			}
+			Connect( receiveThread,  sendThread, hwnd);
+
 			break;
 		case IDM_UPLOADFILE:
-			ZeroMemory(&ofn, sizeof(ofn));
-			ofn.lStructSize = sizeof(ofn);
-			ofn.hwndOwner = NULL;
-			ofn.lpstrFile =  szFile;
-			ofn.lpstrFile[0] = '\0';
-			ofn.nMaxFile = sizeof(szFile);
-			ofn.lpstrFilter = _TEXT("All\0*.*\0Text\0*.TXT\0");
-			ofn.nFilterIndex = 1;
-			ofn.lpstrFileTitle = NULL;
-			ofn.nMaxFileTitle = 0;
-			ofn.lpstrInitialDir = NULL;
-			ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-			GetOpenFileNameA((LPOPENFILENAMEA) &ofn);
-
+			addFile();
+			OutputDebugStringA("HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello");
+			for (int i = 0; i < dataLink->uploadedFrames->size(); i++) {
+				char* frame = dataLink->uploadedFrames->at(i) + 0x00;
+				while (frame != nullptr) {
+					OutputDebugStringA(frame);
+				}
+				OutputDebugStringA("woiejfo");
+			}
 
 			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 
 			
 			break;
 		case IDM_DISCONNECT:
-			if (data->connected == true) {
-				data->connected = false;
+			if (wpData->connected == true) {
+				wpData->connected = false;
 					setMenuButton(hwnd, IDM_DISCONNECT, MF_GRAYED);
 					setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
 			}
@@ -163,26 +182,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				TEXT("Help"), MB_OK);
 			break;
 		case IDM_EXIT:
-			if (data->hComm) {
-				CloseHandle(data->hComm);
+			if (wpData->hComm) {
+				CloseHandle(wpData->hComm);
 			}
 			PostQuitMessage(0);
 		}
 		break;
 	case WM_CHAR:
-		if (!data->connected) {
+		if (!wpData->connected) {
 			break;
 		}
 		if (wParam == VK_ESCAPE) {
 			MessageBox(NULL, TEXT("You have been disconnected!"), TEXT(""), MB_OK);
-			data->connected = false;
-			CloseHandle(data->hComm);
-			data->hComm = NULL;
+			wpData->connected = false;
+			CloseHandle(wpData->hComm);
+			wpData->hComm = NULL;
 			setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
 			DrawMenuBar(hwnd);
 			break;
 		}
-		Write(data->hComm, wParam);
+		Write(wpData->hComm, wParam);
 		break;
 
 	case WM_PAINT:		// Process a repaint message
@@ -192,9 +211,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DESTROY:	// Terminate program
-		if (data->hComm) {
-			CloseHandle(data->hComm);
-			delete data;
+		if (wpData->hComm) {
+			CloseHandle(wpData->hComm);
+			delete wpData;
 		}
 		PostQuitMessage(0);
 		break;

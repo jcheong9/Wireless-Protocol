@@ -175,19 +175,38 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 -- If there is a character in the input buffer, receives the character into the str buffer by calling Read 
 ----------------------------------------------------------------------------------------------------------------------*/
 
-DWORD WINAPI ReadFunc(LPVOID n) {
+DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
 	char str[2];
 	str[1] = '\0';
 	DWORD CommEvent{ 0 };
 	static unsigned x = 0;
 	static unsigned y = 0;
-	SetCommMask(data->hComm, EV_RXCHAR); // event-driven
-	while (data->hComm != NULL) {
-		if (WaitCommEvent(data->hComm, &CommEvent, 0)) { 
-			if (Read(data->hComm, str, 1, NULL, &o1)) { 
-				data->hdc = GetDC(data->hwnd); 
-				printToWindow(data->hwnd, data->hdc, str, &x, &y); // print character
+	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
+	while (wpData->hComm != NULL) {
+		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) { 
+			if (Read(wpData->hComm, str, 1, NULL, &o1)) { 
+				wpData->hdc = GetDC(wpData->hwnd); 
+				printToWindow(wpData->hwnd, wpData->hdc, str, &x, &y); // print character
+			}
+		}
+	}
+	return 1;
+}
+
+DWORD WINAPI ThreadReceiveProc(LPVOID n) {
+	OVERLAPPED o1{ 0 };
+	char str[2];
+	str[1] = '\0';
+	DWORD CommEvent{ 0 };
+	static unsigned x = 0;
+	static unsigned y = 0;
+	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
+	while (wpData->hComm != NULL) {
+		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+			if (Read(wpData->hComm, str, 1, NULL, &o1)) {
+				wpData->hdc = GetDC(wpData->hwnd);
+				printToWindow(wpData->hwnd, wpData->hdc, str, &x, &y); // print character
 			}
 		}
 	}

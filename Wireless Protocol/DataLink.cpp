@@ -1,6 +1,8 @@
 #include "DataLink.h"
 #define DWORD_SIZE 1017
 #define FRAME_SIZE 1024
+
+
 DataLink* dataLink = new DataLink();
 bool packetizeFile(string filePath) {
 	dataLink->uploadedFrames = new vector<char*>();
@@ -45,3 +47,6 @@ bool packetizeFile(string filePath) {
 	}
 	return true;
 }
+
+
+
