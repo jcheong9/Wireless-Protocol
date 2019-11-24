@@ -55,9 +55,6 @@ OPENFILENAME ofn;
 // a another memory buffer to contain the file name
 char szFile[1000];
 
-
-
-
 int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	COMMCONFIG cc;
 	cc.dwSize = sizeof(COMMCONFIG);
@@ -69,6 +66,8 @@ int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	}
 	return 0;
 }
+
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WndProc
 --
@@ -97,7 +96,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	HDC hdc;
 	PAINTSTRUCT paintstruct;
 	OVERLAPPED o1 = { 0 };
-	HANDLE readThread = NULL;
+	HANDLE receiveThread = NULL;
+	HANDLE sendThread = NULL;
 	DWORD threadId;
 
 	switch (Message)
@@ -122,12 +122,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		case IDM_CONNECT:
 			if (data->connected == false) {
 				data->connected = true;
-				if (readThread == NULL) {
-					readThread = CreateThread(NULL, 0, ReadFunc, &data, 0, &threadId);
+				if (receiveThread == NULL && sendThread == NULL) {
+					//sendThread = CreateThread(NULL, 0, ThreadSendProc, &data, 0, &threadId);
+					//receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &data, 0, &threadId);
+				}
 					setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
 					setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
-
-				}
 			}
 			break;
 		case IDM_UPLOADFILE:
