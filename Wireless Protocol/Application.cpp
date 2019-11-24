@@ -155,11 +155,11 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 {
-	TextOut(hdc, *x, *y, (LPCWSTR)str, strlen(str));
+	TextOut(hdc, *x, *y,  str, strlen(str));
 	SIZE size;
 	TEXTMETRIC tm;
 	GetTextMetrics(hdc, &tm);
-	GetTextExtentPoint32(data->hdc, (LPCWSTR)str, strlen(str), &size);
+	GetTextExtentPoint32(data->hdc,  str, strlen(str), &size);
 	*x += size.cx; // increment the screen x-coordinate
 	if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
 		*x = 0;
