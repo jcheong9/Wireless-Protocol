@@ -3,9 +3,9 @@
 #include "DumbMenu.h"
 #include "Application.h"
 #include "DataLink.h"
-
 OPENFILENAME ofn;
 char szFile[1000];
+
 /*------------------------------------------------------------------------------------------------------------------
 -- SOURCE FILE: Session.c - A Windows application that will act as a dumb terminal
 -- that writes to a serial port and reads from a serial port and displays it on the screen
@@ -46,8 +46,7 @@ boolean addFile() {
 	ofn.lpstrInitialDir = NULL;
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-	GetOpenFileNameA((LPOPENFILENAMEA)&ofn);
-	return true;
+	return GetOpenFileNameA((LPOPENFILENAMEA)&ofn);
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: ConfigurePort
@@ -160,8 +159,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		case IDM_CONNECT:
 			Connect( receiveThread,  sendThread, hwnd);
 			break;
+
+
 		case IDM_UPLOADFILE:
-			addFile();
+			if (addFile()) {
+				if (packetizeFile(ofn.lpstrFile) != 1) {
+					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
+				}
+			}
+			else {
+				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);
+			}
+
+
 			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
 		case IDM_DISCONNECT:
