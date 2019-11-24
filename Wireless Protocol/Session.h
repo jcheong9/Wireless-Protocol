@@ -1,7 +1,7 @@
 #pragma once
 
-//#include <windows.h>
-//#include <tchar.h>
+#include <windows.h>
+#include <tchar.h>
 
 #ifndef SESSION_H
 #define SESSION_H

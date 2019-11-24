@@ -3,9 +3,9 @@
 #include "DumbMenu.h"
 #include "Application.h"
 #include "DataLink.h"
-
 OPENFILENAME ofn;
 char szFile[1000];
+
 /*------------------------------------------------------------------------------------------------------------------
 -- SOURCE FILE: Session.c - A Windows application that will act as a dumb terminal
 -- that writes to a serial port and reads from a serial port and displays it on the screen
@@ -86,8 +86,8 @@ int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd) {
 	DWORD threadSendId;
 	DWORD threadReceiveId;
-	if (data->connected == false) {
-		data->connected = true;
+	if (wpData->connected == false) {
+		wpData->connected = true;
 		if (receiveThread == NULL && sendThread == NULL) {
 			//sendThread = CreateThread(NULL, 0, ThreadSendProc, &data, 0, &threadSendId);
 			//receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &data, 0, &threadReceiveId);

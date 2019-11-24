@@ -201,12 +201,12 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	DWORD CommEvent{ 0 };
 	static unsigned x = 0;
 	static unsigned y = 0;
-	SetCommMask(data->hComm, EV_RXCHAR); // event-driven
-	while (data->hComm != NULL) {
-		if (WaitCommEvent(data->hComm, &CommEvent, 0)) {
-			if (Read(data->hComm, str, 1, NULL, &o1)) {
-				data->hdc = GetDC(data->hwnd);
-				printToWindow(data->hwnd, data->hdc, str, &x, &y); // print character
+	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
+	while (wpData->hComm != NULL) {
+		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+			if (Read(wpData->hComm, str, 1, NULL, &o1)) {
+				wpData->hdc = GetDC(wpData->hwnd);
+				printToWindow(wpData->hwnd, wpData->hdc, str, &x, &y); // print character
 			}
 		}
 	}
