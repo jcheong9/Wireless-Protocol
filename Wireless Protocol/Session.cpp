@@ -71,9 +71,6 @@ boolean addFile() {
 ----------------------------------------------------------------------------------------------------------------------*/
 
 
-
-
-
 int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	COMMCONFIG cc;
 	cc.dwSize = sizeof(COMMCONFIG);
@@ -85,6 +82,22 @@ int ConfigurePort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	}
 	return 0;
 }
+
+void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd) {
+	DWORD threadSendId;
+	DWORD threadReceiveId;
+	if (data->connected == false) {
+		data->connected = true;
+		if (receiveThread == NULL && sendThread == NULL) {
+			//sendThread = CreateThread(NULL, 0, ThreadSendProc, &data, 0, &threadSendId);
+			//receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &data, 0, &threadReceiveId);
+		}
+		setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
+		setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
+	}
+}
+
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WndProc
 --
@@ -113,8 +126,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	HDC hdc;
 	PAINTSTRUCT paintstruct;
 	OVERLAPPED o1 = { 0 };
-	HANDLE readThread = NULL;
-	DWORD threadId;
+	HANDLE receiveThread = NULL;
+	HANDLE sendThread = NULL;
+
 
 	switch (Message)
 	{
@@ -136,15 +150,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 			break;
 		case IDM_CONNECT:
-			if (wpData->connected == false) {
-				wpData->connected = true;
-				if (readThread == NULL) {
-					readThread = CreateThread(NULL, 0, ReadFunc, &wpData, 0, &threadId);
-					setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
-					setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
 
-				}
-			}
+			Connect( receiveThread,  sendThread, hwnd);
+
 			break;
 		case IDM_UPLOADFILE:
 
