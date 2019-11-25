@@ -5,7 +5,18 @@
 #include "DataLink.h"
 OPENFILENAME ofn;
 char szFile[1000];
+unsigned int xC = 0;
+unsigned int yC = 0;
+char testr[2];
+int ss = 0;
+char* s = (char*) "H";
 
+char str[80] = "";
+HDC hdc;
+PAINTSTRUCT paintstruct;
+OVERLAPPED o1 = { 0 };
+HANDLE readThread = NULL;
+DWORD threadId;
 /*------------------------------------------------------------------------------------------------------------------
 -- SOURCE FILE: Session.c - A Windows application that will act as a dumb terminal
 -- that writes to a serial port and reads from a serial port and displays it on the screen
@@ -136,20 +147,34 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		{
 		case IDM_COM1:
 			if (wpData->hComm == NULL) {
-				wpData->hComm = OpenPort((LPCWSTR) "COM1");
-				ConfigurePort(hwnd, wpData->hComm, TEXT("COM1"));
-				setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
+				wpData->hComm = OpenPort((LPCWSTR) "COM5");
+				ConfigurePort(wpData->hwnd, wpData->hComm, TEXT("COM5"));
+				setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED);
+
 			}
 			else {
-				ConfigurePort(hwnd, wpData->hComm, TEXT("COM1"));
+				ConfigurePort(wpData->hwnd, wpData->hComm, TEXT("COM5"));
 			}
+
 			break;
 
 		case IDM_SETTINGS:
 
+			printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
+
+
 			break;
 		case IDM_CONNECT:
-			Connect( receiveThread,  sendThread, hwnd);
+			if (wpData->connected == false) {
+				wpData->connected = true;
+				wpData->hdc = GetDC(wpData->hwnd);
+				if (readThread == NULL) {
+					readThread = CreateThread(NULL, 0, ThreadReceiveProc, &wpData, 0, &threadId);
+					setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
+					setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_ENABLED);
+
+				}
+			}
 			break;
 
 		case IDM_UPLOADFILE:
