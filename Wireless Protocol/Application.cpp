@@ -58,12 +58,13 @@
 ----------------------------------------------------------------------------------------------------------------------*/
 
 Data* wpData = new Data();
+
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow)
 {
 	wpData->connected = false;
 	wpData->hComm = NULL;
-	static TCHAR Name[] = TEXT("Dumb Terminal");
+	static TCHAR Name[] = TEXT("Wireless Protocol");
 	MSG Msg{ 0 };
 	WNDCLASSEX Wcl;
 
@@ -84,14 +85,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	if (!RegisterClassEx(&Wcl))
 		return 0;
 
-	wpData->hwnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
-		610, 400, NULL, NULL, hInst, NULL);
-	//setMenuButton(data->hwnd, IDM_CONNECT, MF_GRAYED);
+	wpData->hwnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, (GetSystemMetrics(0) / 2 - 500), (GetSystemMetrics(1) / 2 - 400),
+		1000, 800, NULL, NULL, hInst, NULL);
+	setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 	setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 
 	ShowWindow(wpData->hwnd, nCmdShow);
 	UpdateWindow(wpData->hwnd);
-
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -155,15 +155,15 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 {
-	TextOut(hdc, *x, *y,  str, strlen(str));
+	TextOut(wpData->hdc, *x,  *y,  str, strlen(str));
 	SIZE size;
 	TEXTMETRIC tm;
-	GetTextMetrics(hdc, &tm);
+	GetTextMetrics(wpData->hdc, &tm);
 	GetTextExtentPoint32(wpData->hdc,  str, strlen(str), &size);
 	*x += size.cx; // increment the screen x-coordinate
 	if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
 		*x = 0;
 		*y = *y + tm.tmHeight + tm.tmExternalLeading;
 	}
-	ReleaseDC(hwnd, hdc);
+	ReleaseDC(wpData->hwnd, wpData->hdc);
 }
