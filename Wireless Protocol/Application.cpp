@@ -196,6 +196,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	OVERLAPPED o1 = { 0 };
 	HANDLE receiveThread = NULL;
 	HANDLE sendThread = NULL;
+	OPENFILENAME ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+	HANDLE readThread = NULL;
+	DWORD threadId;
+	LPCSTR portNumber = (LPCSTR)"COM1";
+
+
 
 
 	switch (Message)
@@ -218,7 +225,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_SETTINGS:
 
-			printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
+			//printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
 
 
 			break;
@@ -237,7 +244,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 
 		case IDM_UPLOADFILE:
-			if (addFile()) {
+			if (addFile(ofn)) {
 				if (packetizeFile(ofn.lpstrFile) != 1) {
 					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
 				}

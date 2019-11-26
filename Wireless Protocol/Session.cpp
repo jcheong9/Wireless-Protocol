@@ -1,9 +1,10 @@
 //#include <windows.h>
 #include "Session.h"
-
+#include <tchar.h>
 char testr[2];
 int ss = 0;
 
+char szFile[1000];
 char str[80] = "";
 HDC hdc;
 PAINTSTRUCT paintstruct;
@@ -34,8 +35,7 @@ OVERLAPPED o1 = { 0 };
 -- 
 ----------------------------------------------------------------------------------------------------------------------*/
 
-boolean addFile() {
-	ZeroMemory(&ofn, sizeof(ofn));
+boolean addFile(OPENFILENAME &ofn) {
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;
 	ofn.lpstrFile = szFile;

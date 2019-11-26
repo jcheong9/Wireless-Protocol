@@ -4,7 +4,7 @@
 #include <windows.h>
 #include "DumbMenu.h"
 #include "Session.h"
-#include "Physical.h"
+//#include "Physical.h"
 #include "DataLink.h"
 #include <tchar.h>
 
@@ -15,17 +15,15 @@ struct Data {
 	bool connected;
 };
 
-__declspec(selectany) LPCSTR portNumber = (LPCSTR)"COM1";
+
 extern Data * wpData;
-__declspec(selectany) unsigned int xC = 0;
-__declspec(selectany) unsigned int yC = 0;
-__declspec(selectany) char* s = (char*)"H";
-__declspec(selectany) HANDLE readThread = NULL;
-__declspec(selectany) DWORD threadId;
-__declspec(selectany) OPENFILENAME ofn;
-__declspec(selectany) char szFile[1000];
+//__declspec(selectany) unsigned int xC = 0;
+//__declspec(selectany) unsigned int yC = 0;
+//__declspec(selectany) char* s = (char*)"H";
 
 
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);
 
