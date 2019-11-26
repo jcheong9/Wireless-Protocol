@@ -2,12 +2,13 @@
 #ifndef PHYSICAL_H
 #define PHYSICAL_H
 #include "Application.h"
+#include "DataLink.h"
 //#include <windows.h>
 
-#define SYN0			0x00
-#define SYN1			0xFF
+#define SYN0		0x00
+#define SYN1		0xFF
 #define STX			0x02
-#define EndOF			0x12
+#define EOF1		0x12
 #define ENQ			0x05
 #define ACK			0x06
 #define REQ			0x11
@@ -19,7 +20,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n);
 DWORD WINAPI ThreadReceiveProc(LPVOID n);
 int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1);
 int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize);
-int sendFrame(HANDLE hComm, vector<char[1024]>* frame);
+int sendFrame(HANDLE hComm, char frame[1024]);
 int waitAck();
 
 struct PhysicalData {
