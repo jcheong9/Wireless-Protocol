@@ -1,7 +1,4 @@
-#include <windows.h>
-#include "Session.h"
 #include "Physical.h"
-#include "Application.h"
 /*------------------------------------------------------------------------------------------------------------------
 -- SOURCE FILE: Physical.c - Contains RS-232 and system level flow control functions
 --
