@@ -12,19 +12,23 @@ struct Data {
 	HANDLE hComm;
 	HDC hdc;
 	HWND hwnd;
+	BOOL receivedREQ;
 	bool connected;
+	int status;
 };
-
-
 extern Data * wpData;
-//__declspec(selectany) unsigned int xC = 0;
-//__declspec(selectany) unsigned int yC = 0;
-//__declspec(selectany) char* s = (char*)"H";
+
 
 
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);
+
+#define ENQ		0x05;
+#define ACK		0x06;
+#define REQ		0x11;
+#define EOT		0x04;
+
 
 #endif
