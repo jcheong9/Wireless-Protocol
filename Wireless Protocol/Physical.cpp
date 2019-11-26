@@ -22,6 +22,9 @@
 -- NOTES: Provides access to the physical communications link,by initializing the port, and handling receiving and writing characters
 ----------------------------------------------------------------------------------------------------------------------*/
 
+HANDLE responseWaitEvent = CreateEvent(NULL, TRUE,TRUE, (LPTSTR)_T("ACK"));
+HANDLE ackEvent;
+HANDLE eofEvent;
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
@@ -108,11 +111,66 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 
-int Write(HANDLE hComm, TCHAR character) {
+int Write(HANDLE hComm, char frame[1024] ) {
+	int nBytesToRead = 1024;
 	OVERLAPPED o1{ 0 };
-	if (WriteFile(hComm, &character, 1, 0, &o1))
+	if (WriteFile(hComm, &frame, nBytesToRead, 0, &o1))
 	{
+		OutputDebugString(_T("WROTE."));
 		return 1;
+	}
+	OutputDebugString(_T("Failed."));
+	return 0;
+}
+/*
+int sendFrame(HANDLE hComm, int framePointIndex) {
+	DWORD CommEvent{ 0 };
+	char str[10] = "";
+	int nBytesToRead = 1024;
+	DWORD dwBytesWritten = 0;
+	int REQCounter = 0;
+	char eof[2] = { 'end' };
+	
+
+	if (!WriteFile(wpData->hComm, frame, nBytesToRead, &dwBytesWritten, NULL))
+	{
+		OutputDebugString("Error Writing port");
+		return 1;
+	}
+		
+		if (WaitForSingleObject(ackEvent,1000) == WAIT_OBJECT_0) {
+
+			if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+				if (wpData->receivedREQ == true && REQCounter < 3) {
+					REQCounter++;
+					if (REQCounter == 3) {
+						//sent EOF
+						if (!WriteFile(wpData->hComm, eof, nBytesToRead, &dwBytesWritten, NULL))
+						{
+							OutputDebugString("Error Writing port");
+							return 1;
+						}
+						WaitForSingleObject(eofEvent, 1000);
+						wpData->status = IDLE;
+
+					}
+				}
+			
+		}
+
+
+	}
+
+	return 0;
+}
+*/
+
+
+int waitAck() {
+	DWORD CommEvent{ 0 };
+	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
+	if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+
 	}
 	return 0;
 }
@@ -179,6 +237,13 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	DWORD CommEvent{ 0 };
 	static unsigned x = 0;
 	static unsigned y = 0;
+	int framePointIndex = 0;
+	OutputDebugString(_T("My output string."));
+	char frame[1024] = { 'H', 'e', 'l', 'l', 'o', '\0' };
+	const TCHAR* data = TEXT("hello");
+	Write(wpData->hComm, frame);
+	/*
+	dataLink->uploadedFrames->at(framePointIndex);
 	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
 	while (wpData->hComm != NULL) {
 		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) { 
@@ -188,6 +253,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			}
 		}
 	}
+	*/
 	return 1;
 }
 
@@ -209,3 +275,4 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	}
 	return 1;
 }
+

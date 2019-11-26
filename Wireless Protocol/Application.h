@@ -13,13 +13,13 @@ struct Data {
 	HDC hdc;
 	HWND hwnd;
 	bool connected;
+	BOOL receivedREQ;
+	int status;
 };
 
 
 extern Data * wpData;
-//__declspec(selectany) unsigned int xC = 0;
-//__declspec(selectany) unsigned int yC = 0;
-//__declspec(selectany) char* s = (char*)"H";
+
 
 
 
@@ -29,7 +29,7 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 
 
 #define IDLE			50
-#define RECEIVE_MODE		51
+#define RECEIVE_MODE	51
 #define SEND_MODE		52
 
 
