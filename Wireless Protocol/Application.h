@@ -12,14 +12,12 @@ struct Data {
 	HANDLE hComm;
 	HDC hdc;
 	HWND hwnd;
+	BOOL receivedREQ;
 	bool connected;
+	int status;
 };
-
-
 extern Data * wpData;
-//__declspec(selectany) unsigned int xC = 0;
-//__declspec(selectany) unsigned int yC = 0;
-//__declspec(selectany) char* s = (char*)"H";
+
 
 
 

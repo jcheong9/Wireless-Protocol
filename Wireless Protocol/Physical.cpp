@@ -22,6 +22,10 @@
 -- NOTES: Provides access to the physical communications link,by initializing the port, and handling receiving and writing characters
 ----------------------------------------------------------------------------------------------------------------------*/
 
+HANDLE responseWaitEvent = CreateEvent(NULL, TRUE,TRUE, (LPTSTR)_T("ACK"));
+HANDLE ackEvent;
+HANDLE eofEvent;
+#define IDLE	51;
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
@@ -108,11 +112,58 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 
-int Write(HANDLE hComm, TCHAR character) {
-	OVERLAPPED o1{ 0 };
-	if (WriteFile(hComm, &character, 1, 0, &o1))
+//int Write(HANDLE hComm, TCHAR character) {
+//	OVERLAPPED o1{ 0 };
+//	if (WriteFile(hComm, &character, 1, 0, &o1))
+//	{
+//		return 1;
+//	}
+//	return 0;
+//}
+int sendFrame(HANDLE hComm, char frame[1024]) {
+	DWORD CommEvent{ 0 };
+	char str[10] = "";
+	int nBytesToRead = 1024;
+	DWORD dwBytesWritten = 0;
+	int REQCounter = 0;
+	char eof[2] = { 'end' };
+	if (!WriteFile(wpData->hComm, frame, nBytesToRead, &dwBytesWritten, NULL))
 	{
+		OutputDebugString("Error Writing port");
 		return 1;
+	}
+		
+		if (WaitForSingleObject(ackEvent,1000) == WAIT_OBJECT_0) {
+
+			if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+				if (wpData->receivedREQ == true && REQCounter < 3) {
+					REQCounter++;
+					if (REQCounter == 3) {
+						//sent EOF
+						if (!WriteFile(wpData->hComm, eof, nBytesToRead, &dwBytesWritten, NULL))
+						{
+							OutputDebugString("Error Writing port");
+							return 1;
+						}
+						WaitForSingleObject(eofEvent, 1000);
+						wpData->status = IDLE;
+
+					}
+				}
+			
+		}
+
+
+	}
+
+	return 0;
+}
+
+int waitAck() {
+	DWORD CommEvent{ 0 };
+	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
+	if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+
 	}
 	return 0;
 }
@@ -209,3 +260,4 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	}
 	return 1;
 }
+
