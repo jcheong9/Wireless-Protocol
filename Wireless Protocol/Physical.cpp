@@ -25,7 +25,7 @@
 HANDLE responseWaitEvent = CreateEvent(NULL, TRUE,TRUE, (LPTSTR)_T("ACK"));
 HANDLE ackEvent;
 HANDLE eofEvent;
-#define IDLE	51;
+
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
