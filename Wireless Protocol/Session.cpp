@@ -154,7 +154,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_SETTINGS:
-
 			break;
 		case IDM_CONNECT:
 			Connect( receiveThread,  sendThread, hwnd);
@@ -165,14 +164,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				if (packetizeFile(ofn.lpstrFile) != 1) {
 					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
 				}
-				OutputDebugStringA("HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello");
-				for (int i = 0; i < dataLink->uploadedFrames.size(); i++) {
-					char* frame = dataLink->uploadedFrames.at(i);
-					
-						OutputDebugStringA(frame);
-					
-					OutputDebugStringA("woiejfo");
-				}
+				//for (int i = 0; i < dataLink->uploadedFrames.size(); i++) {
+				//	char* frame = dataLink->uploadedFrames.at(i);
+				//	for (int j = 0; j < 19; j++) {
+				//		char a = frame[j];
+				//	}
+				//}
 			}
 			else {
 				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);

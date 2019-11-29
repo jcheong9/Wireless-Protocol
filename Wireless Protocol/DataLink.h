@@ -4,11 +4,10 @@
 #include <vector>
 #include <fstream>
 #include <crc.hpp>
-
-#define DWORD_SIZE 1017;
+#include <sstream>
 using namespace std;
 bool packetizeFile(string filePath);
-void CRC();
+string crc(char* buffer);
 struct DataLink {
 	vector<char*> uploadedFrames;
 };
