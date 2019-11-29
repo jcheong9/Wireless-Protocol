@@ -12,10 +12,12 @@ struct Data {
 	HANDLE hComm;
 	HDC hdc;
 	HWND hwnd;
-	BOOL receivedREQ;
 	bool connected;
+	BOOL receivedREQ;
 	int status;
 };
+
+
 extern Data * wpData;
 
 
@@ -27,7 +29,7 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 
 
 #define IDLE			50
-#define RECEIVE_MODE		51
+#define RECEIVE_MODE	51
 #define SEND_MODE		52
 
 
