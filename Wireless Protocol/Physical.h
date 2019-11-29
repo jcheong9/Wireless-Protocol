@@ -7,7 +7,7 @@
 #define SYN0			0x00
 #define SYN1			0xFF
 #define STX			0x02
-#define EOF			0x12
+#define EndOF			0x12
 #define ENQ			0x05
 #define ACK			0x06
 #define REQ			0x11
