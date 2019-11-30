@@ -22,10 +22,68 @@
 -- NOTES: Provides access to the physical communications link,by initializing the port, and handling receiving and writing characters
 ----------------------------------------------------------------------------------------------------------------------*/
 
-HANDLE responseWaitEvent = CreateEvent(NULL, TRUE,TRUE, (LPTSTR)_T("ACK"));
+HANDLE ReceiveModeEvent;
+HANDLE responseWaitEvent = CreateEvent(NULL, TRUE, TRUE, (LPTSTR)_T("ACK"));
 HANDLE ackEvent;
 HANDLE eotEvent;
 int REQCounter = 0;
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Bid
+--
+-- DATE: November29, 2019
+--
+-- REVISIONS: 
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: HANDLE OpenPort(LPCWSTR lpszCommName)
+--			  LPCWSTR lpszCommName: the name of the Com port to open
+--
+-- RETURNS: int
+--
+-- NOTES: Bids for trnsmission if a file is uploaded or awaits an ENQ if no file is uploaded.
+--
+----------------------------------------------------------------------------------------------------------------------*/
+
+int Bid() {
+	OVERLAPPED o1{ 0 };
+	char chRead[2];
+
+	DWORD CommEvent{ 0 };
+	DWORD timeoutToReceive = 500;
+	DWORD randomizedTO = 0;
+
+	ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	HANDLE dummy = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+
+	OutputDebugString(_T("Bidding"));
+	if (wpData->fileUploaded && wpData->status == IDLE) {
+		if (WriteFile(wpData->hComm, (LPCVOID)(SYN0 + ENQ), 2, NULL, &o1)) {
+			if (WaitForSingleObject(ReceiveModeEvent, timeoutToReceive) == WAIT_OBJECT_0) {
+				wpData->sentdEnq = true;
+				OutputDebugString(_T("Received"));
+				wpData->status = SEND_MODE;
+				//continue;
+			}
+			//timeout
+			else {
+				wpData->sentdEnq = false;
+				randomizedTO = randomizeTimeOut(500, 1000);
+				OutputDebugString(_T("Timeout2"));
+				WaitForSingleObject(dummy, randomizedTO) == WAIT_OBJECT_0;
+			}
+		}
+	}
+
+
+	return 1;
+}
+
+
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
@@ -314,5 +372,10 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 		}
 	}
 	return 1;
+}
+
+
+int randomizeTimeOut(int range_min, int range_max){
+	return (double)rand() / (RAND_MAX + 1) * (range_max - range_min) + range_min;
 }
 

@@ -15,12 +15,17 @@
 #define EOT			0x04
 #define FRAME_SIZE	1024
 
+
+
 HANDLE OpenPort(LPCWSTR lpszCommName);
 //int Write(HANDLE hComm, TCHAR character);
 DWORD WINAPI ThreadSendProc(LPVOID n);
 DWORD WINAPI ThreadReceiveProc(LPVOID n);
 int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1);
 int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize);
+
+int randomizeTimeOut(int range_min, int range_max);
+int Bid();
 int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead);
 int waitACK();
 

@@ -1,6 +1,5 @@
 //#include <windows.h>
 #include "Session.h"
-#include <tchar.h>
 char testr[2];
 int ss = 0;
 
@@ -104,6 +103,11 @@ void Disconnect(HWND hwnd) {
 		setMenuButton(hwnd, IDM_DISCONNECT, MF_GRAYED);
 		setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
 	}
+}
+
+void prepareTransmission() {
+	OutputDebugString(_T("prep"));
+	Bid();
 }
 
 

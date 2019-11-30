@@ -61,7 +61,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow)
 {
 	wpData->connected = false;
+	wpData->status = IDLE;
 	wpData->hComm = NULL;
+	wpData->sentdEnq = false;
+	wpData->fileUploaded = false;
 	static TCHAR Name[] = TEXT("Wireless Protocol");
 	MSG Msg{ 0 };
 	WNDCLASSEX Wcl;
@@ -87,6 +90,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		1000, 800, NULL, NULL, hInst, NULL);
 	setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 	setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
+
+	HWND hWndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Edit"), TEXT("test"),
+		WS_CHILD | WS_VISIBLE , 0, 0, 1000, 800, wpData->hwnd, NULL, NULL, NULL);
+
 
 	ShowWindow(wpData->hwnd, nCmdShow);
 	UpdateWindow(wpData->hwnd);
@@ -200,7 +207,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	ZeroMemory(&ofn, sizeof(ofn));
 	HANDLE readThread = NULL;
 	DWORD threadId;
-	LPCSTR portNumber = (LPCSTR)"COM1";
+	LPCSTR portNumber = (LPCSTR)"COM5";
 
 
 
@@ -226,8 +233,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		case IDM_SETTINGS:
 			sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
 			//printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
-
-
 			break;
 		case IDM_CONNECT:
 			if (wpData->connected == false) {
@@ -240,13 +245,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 				}
 			}
+			prepareTransmission();
 			break;
-
 
 		case IDM_UPLOADFILE:
 			if (addFile(ofn)) {
 				if (packetizeFile(ofn.lpstrFile) != 1) {
 					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
+					wpData->fileUploaded = true;
 				}
 			}
 			else {
@@ -256,14 +262,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
+
 		case IDM_DISCONNECT:
 			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED );
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 			break;
+
 		case IDM_HELP:
 			MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
 				TEXT("Help"), MB_OK);
 			break;
+
 		case IDM_EXIT:
 			if (wpData->hComm) {
 				CloseHandle(wpData->hComm);
