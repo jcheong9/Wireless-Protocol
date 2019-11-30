@@ -257,19 +257,19 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 		if (wpData->status == SEND_MODE) {
 
 			framePter = dataLink->uploadedFrames->at(framePointIndex);
-			if (sendFrame(wpData->hComm, framePter, sizeof(framePter) / sizeof(framePter[0]))){
+			if (sendFrame(wpData->hComm, framePter, sizeof(framePter))){
 				if (waitACK()) {
 					countErrorAck = 0;
 					if (checkREQ()) {		//false, receive REQ or REQCounter == 3
 						OutputDebugString(_T("Send EOT, go to IDLE"));
 					}
 					else {
-						sendFrame(wpData->hComm, framePter, sizeof(framePter) / sizeof(framePter[0]));
+						sendFrame(wpData->hComm, framePter, sizeof(framePter));
 					}
 				}
 				else {
 					//resent frame
-					if (sendFrame(wpData->hComm, framePter, sizeof(framePter) / sizeof(framePter[0]))) {
+					if (sendFrame(wpData->hComm, framePter, sizeof(framePter))) {
 						OutputDebugString(_T("Resend Frame"));
 					}
 					countErrorAck++;
