@@ -25,10 +25,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);
 
-#define ENQ		0x05;
-#define ACK		0x06;
-#define REQ		0x11;
-#define EOT		0x04;
+#define IDLE			50
+#define RECEIVE_MODE	51
+#define SEND_MODE		52
 
 
 #endif

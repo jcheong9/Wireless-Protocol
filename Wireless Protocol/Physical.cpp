@@ -24,7 +24,7 @@
 
 HANDLE responseWaitEvent = CreateEvent(NULL, TRUE,TRUE, (LPTSTR)_T("ACK"));
 HANDLE ackEvent;
-HANDLE eofEvent;
+HANDLE eotEvent;
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
@@ -91,15 +91,15 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: Write
+-- FUNCTION: sendFrame
 --
--- DATE: September 30, 2019
+-- DATE: November 11, 2019
 --
 -- REVISIONS: none
 --
 -- DESIGNER: Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Jameson Cheong
 --
 -- INTERFACE: int Write(HANDLE hComm, TCHAR character) 
 --				HANDLE hComm: handle to the port to write
@@ -111,65 +111,67 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 
-int Write(HANDLE hComm, char frame[1024] ) {
-	int nBytesToRead = 1024;
+int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
+	//int nBytesToRead = 1024;
+	DWORD CommEvent{ 0 };
 	OVERLAPPED o1{ 0 };
-	if (WriteFile(hComm, &frame, nBytesToRead, 0, &o1))
+	DWORD dwBytesWritten = 0;
+	int REQCounter = 0;
+	char frame11[500];
+	strncpy(frame11, frame, 500);
+	
+	if (!WriteFile(hComm, &frame11, nBytesToRead, 0, &o1))
 	{
 		OutputDebugString(_T("WROTE."));
 		return 1;
 	}
-	OutputDebugString(_T("Failed."));
-	return 0;
-}
-/*
-int sendFrame(HANDLE hComm, int framePointIndex) {
-	DWORD CommEvent{ 0 };
-	char str[10] = "";
-	int nBytesToRead = 1024;
-	DWORD dwBytesWritten = 0;
-	int REQCounter = 0;
-	char eof[2] = { 'end' };
-	
-
-	if (!WriteFile(wpData->hComm, frame, nBytesToRead, &dwBytesWritten, NULL))
-	{
-		OutputDebugString("Error Writing port");
-		return 1;
-	}
+	if (WaitForSingleObject(ackEvent, 1000) == WAIT_OBJECT_0) {
 		
-		if (WaitForSingleObject(ackEvent,1000) == WAIT_OBJECT_0) {
-
-			if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
-				if (wpData->receivedREQ == true && REQCounter < 3) {
-					REQCounter++;
-					if (REQCounter == 3) {
-						//sent EOF
-						if (!WriteFile(wpData->hComm, eof, nBytesToRead, &dwBytesWritten, NULL))
-						{
-							OutputDebugString("Error Writing port");
-							return 1;
-						}
-						WaitForSingleObject(eofEvent, 1000);
-						wpData->status = IDLE;
-
+		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+			if (wpData->receivedREQ == true && REQCounter < 3) {
+				REQCounter++;
+				if (REQCounter == 3) {
+					//To do sent EOF .... need packize eot frame
+					if (!WriteFile(wpData->hComm, (LPCVOID)EOT, nBytesToRead, &dwBytesWritten, NULL))
+					{
+						OutputDebugString("Error Writing port");
+						return 1;
 					}
+					WaitForSingleObject(eotEvent, 1000);
+					wpData->status = IDLE;
 				}
-			
+			}
+
 		}
 
-
+		return 0;
 	}
-
-	return 0;
 }
-*/
 
-
-int waitAck() {
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: waitACK
+--
+-- DATE: November 11, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Tommy Chang
+--
+-- PROGRAMMER: Jameson Cheong
+--
+-- INTERFACE: int Write(HANDLE hComm, TCHAR character)
+--				HANDLE hComm: handle to the port to write
+--				TCHAR character: character to write
+--
+-- RETURNS: int
+--
+-- NOTES: Writes the WM_CHAR received from WndProc to the handle
+--
+----------------------------------------------------------------------------------------------------------------------*/
+int waitACK(HANDLE hComm) {
 	DWORD CommEvent{ 0 };
 	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
-	if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+	if (!WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
 
 	}
 	return 0;
@@ -239,9 +241,17 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	static unsigned y = 0;
 	int framePointIndex = 0;
 	OutputDebugString(_T("My output string."));
-	char frame[1024] = { 'H', 'e', 'l', 'l', 'o', '\0' };
-	const TCHAR* data = TEXT("hello");
-	Write(wpData->hComm, frame);
+	char frame[500] = { 'J', 'H', 'e', 'l', 'l', 'o', '\0' };
+
+	while (wpData->connected == true) {
+		if (wpData->status == SEND_MODE) {
+
+		}
+		else {
+			//bid();
+		}
+	}
+	sendFrame(wpData->hComm, frame, sizeof(frame) / sizeof(frame[0]));
 	/*
 	dataLink->uploadedFrames->at(framePointIndex);
 	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
