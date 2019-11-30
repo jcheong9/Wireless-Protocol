@@ -24,6 +24,91 @@
 
 
 /*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Bid
+--
+-- DATE: November29, 2019
+--
+-- REVISIONS: 
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: HANDLE OpenPort(LPCWSTR lpszCommName)
+--			  LPCWSTR lpszCommName: the name of the Com port to open
+--
+-- RETURNS: int
+--
+-- NOTES: Bids for trnsmission if a file is uploaded or awaits an ENQ if no file is uploaded.
+--
+----------------------------------------------------------------------------------------------------------------------*/
+
+int Bid() {
+	OVERLAPPED o1{ 0 };
+	char str[2];
+	str[1] = '\0';
+	DWORD dwCommEvent;
+	DWORD dwRead;
+	char chRead[2];
+	COMMTIMEOUTS CommTimeouts;
+	DWORD CommEvent{ 0 };
+
+	memset(&CommTimeouts, 0, sizeof(CommTimeouts));
+	GetCommTimeouts(wpData->hComm, &CommTimeouts);
+	CommTimeouts.ReadTotalTimeoutMultiplier = 5000;
+	CommTimeouts.ReadTotalTimeoutConstant = 10000;
+	SetCommTimeouts(wpData->hComm, &CommTimeouts);
+
+
+	//while (wpData->status = IDLE) {
+		OutputDebugString(_T("Bidding"));
+		if (wpData->fileUploaded) {
+			if (WriteFile(wpData->hComm, (LPCVOID)(SYN1 + ENQ), 2, NULL, &o1)) {
+			}
+			else {
+			
+			}
+		}
+		SetCommMask(wpData->hComm, EV_RXCHAR);
+		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+			if (ReadFile(wpData->hComm, &chRead, 1, &dwRead, 0)) {
+				OutputDebugString(_T("Received1"));
+
+				//Timeout
+				if (dwRead < 1)
+				{
+					//Timedout randomize timeout and go back
+					CommTimeouts.ReadIntervalTimeout = randomizeTimeOut(500, 1000);
+					OutputDebugString(_T("TO"));
+
+					//continue;
+				}
+				//Received something here
+				if (dwRead > 0) {
+					OutputDebugString(_T("Received"));
+
+					//check second byte in received frame if ENQ ignoring sync byte
+					if (chRead[1] == ENQ) {
+						if (WriteFile(wpData->hComm, (LPCVOID)(chRead[0] + ACK), 2, NULL, 0)) {
+							wpData->status = RECEIVE_MODE;
+						}
+					}
+					//check second byte in received frame if ACK ignoring sync byte
+					else if (chRead[1] == ACK) {
+						//TODO call send frame
+						wpData->status = SEND_MODE;
+					}
+				}
+			}
+			else {
+				OutputDebugString(_T("NOPE"));
+
+			}
+		}
+	//}
+}
+
+/*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
 --
 -- DATE: September 30, 2019
@@ -208,4 +293,8 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 		}
 	}
 	return 1;
+}
+
+int randomizeTimeOut(int range_min, int range_max){
+	return (double)rand() / (RAND_MAX + 1) * (range_max - range_min) + range_min;
 }

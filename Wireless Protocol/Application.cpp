@@ -62,6 +62,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 {
 	wpData->connected = false;
 	wpData->hComm = NULL;
+	wpData->fileUploaded = false;
 	static TCHAR Name[] = TEXT("Wireless Protocol");
 	MSG Msg{ 0 };
 	WNDCLASSEX Wcl;
@@ -200,7 +201,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	ZeroMemory(&ofn, sizeof(ofn));
 	HANDLE readThread = NULL;
 	DWORD threadId;
-	LPCSTR portNumber = (LPCSTR)"COM1";
+	LPCSTR portNumber = (LPCSTR)"COM5";
 
 
 
@@ -222,13 +223,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			}
 
 			break;
-
-		case IDM_SETTINGS:
-
-			//printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
-
-
-			break;
 		case IDM_CONNECT:
 			if (wpData->connected == false) {
 				wpData->connected = true;
@@ -240,13 +234,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 				}
 			}
+			prepareTransmission();
 			break;
-
 
 		case IDM_UPLOADFILE:
 			if (addFile(ofn)) {
 				if (packetizeFile(ofn.lpstrFile) != 1) {
 					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
+					wpData->fileUploaded = true;
 				}
 			}
 			else {
@@ -256,14 +251,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
+
 		case IDM_DISCONNECT:
 			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED );
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 			break;
+
 		case IDM_HELP:
 			MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
 				TEXT("Help"), MB_OK);
 			break;
+
 		case IDM_EXIT:
 			if (wpData->hComm) {
 				CloseHandle(wpData->hComm);
