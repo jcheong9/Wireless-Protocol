@@ -5,8 +5,7 @@
 //#include <windows.h>
 #include "Physical.h"
 
-
 int ConfigPort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName);
 boolean addFile(OPENFILENAME &ofn);
-int prepareTransmission();
+void prepareTransmission();
 #endif

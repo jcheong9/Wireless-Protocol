@@ -15,6 +15,7 @@ struct Data {
 	bool connected;
 	bool fileUploaded;
 	int status;
+	bool sentdEnq;
 };
 
 

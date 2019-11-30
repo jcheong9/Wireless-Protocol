@@ -105,11 +105,9 @@ void Disconnect(HWND hwnd) {
 	}
 }
 
-int prepareTransmission() {
+void prepareTransmission() {
 	OutputDebugString(_T("prep"));
-
 	Bid();
-	return 0;
 }
 
 

@@ -13,6 +13,8 @@
 #define REQ			0x11
 #define EOT			0x04
 
+
+
 HANDLE OpenPort(LPCWSTR lpszCommName);
 int Write(HANDLE hComm, TCHAR character);
 DWORD WINAPI ThreadSendProc(LPVOID n);
