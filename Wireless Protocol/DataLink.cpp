@@ -1,6 +1,5 @@
 #include "DataLink.h"
 #define DWORD_SIZE 1017
-//#define FRAME_SIZE 1024
 #define FRAME_SIZE 1024
 
 DataLink* dataLink = new DataLink();
@@ -72,4 +71,8 @@ string crc(char* buffer) {
 	stream << std::hex << crc;
 	std::string result_in_hex(stream.str());
 	return result_in_hex;
+}
+
+bool checkFrame() {
+	return true;
 }
