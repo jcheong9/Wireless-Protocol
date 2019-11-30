@@ -23,6 +23,10 @@
 ----------------------------------------------------------------------------------------------------------------------*/
 
 HANDLE ReceiveModeEvent;
+HANDLE responseWaitEvent = CreateEvent(NULL, TRUE, TRUE, (LPTSTR)_T("ACK"));
+HANDLE ackEvent;
+HANDLE eotEvent;
+int REQCounter = 0;
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: Bid
@@ -78,6 +82,8 @@ int Bid() {
 
 	return 1;
 }
+
+
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
@@ -144,31 +150,88 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: Write
+-- FUNCTION: sendFrame
 --
--- DATE: September 30, 2019
+-- DATE: November 11, 2019
 --
 -- REVISIONS: none
 --
 -- DESIGNER: Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Jameson Cheong
 --
--- INTERFACE: int Write(HANDLE hComm, TCHAR character) 
---				HANDLE hComm: handle to the port to write
---				TCHAR character: character to write 
+-- INTERFACE: int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead)
 --
--- RETURNS: int
 --
--- NOTES: Writes the WM_CHAR received from WndProc to the handle 
+-- RETURNS: int 1 successfully sent; int 0 failed to sent.
+--
+-- NOTES: Writes the frame received from datalink. Check end of transmition and set status to IDLE
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 
-int Write(HANDLE hComm, TCHAR character) {
+int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
+	DWORD CommEvent{ 0 };
 	OVERLAPPED o1{ 0 };
-	if (WriteFile(hComm, &character, 1, 0, &o1))
+
+	char frame11[FRAME_SIZE];
+	strncpy(frame11, frame, FRAME_SIZE);
+	//running completing asynchronously return false
+	if (!WriteFile(hComm, &frame11, nBytesToRead, 0, &o1))
 	{
+		if (frame11[1] == EOT) {
+			wpData->status = IDLE;
+		}
+		OutputDebugString(_T("Send to port."));
 		return 1;
+	}
+
+	return 0;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: waitACK
+--
+-- DATE: November 11, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Tommy Chang
+--
+-- PROGRAMMER: Jameson Cheong
+--
+-- INTERFACE: int waitACK()
+-- 
+--
+-- RETURNS: int 1 when receive ACK; int 0 when no ACK
+--
+-- NOTES: Waits for an ACK using event driven. 
+--
+----------------------------------------------------------------------------------------------------------------------*/
+int waitACK() {
+	DWORD CommEvent{ 0 };
+	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
+	if (!WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+		return 1;
+	}
+	return 0;
+}
+//return 0 no REQ or REQCounter < 3
+int checkREQ() {
+	char frameEOT[2] = { 255, EOT };
+	if (wpData->receivedREQ == TRUE && REQCounter < 3) {
+		REQCounter++;
+		if (REQCounter == 3) {
+			//To do sent EOF .... need packize eot frame
+			
+			if (!sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
+
+			}
+			WaitForSingleObject(eotEvent, 1000);
+			wpData->status = IDLE;
+			
+			return 1;
+		}
+
 	}
 	return 0;
 }
@@ -233,8 +296,52 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	char str[2];
 	str[1] = '\0';
 	DWORD CommEvent{ 0 };
-	static unsigned x = 0;
-	static unsigned y = 0;
+
+	int framePointIndex = 0;
+	OutputDebugString(_T("Start Thread SEND"));
+	//test frames
+	char frame[1024] = { 'J', 'H', 'e', 'l', 'l', 'o' };
+	char frameEOT[2] = { 0 , 6 };
+	int size = sizeof(frame);
+	//test send
+	char* framePter;
+	int countErrorAck = 0;
+	
+	sendFrame(wpData->hComm, frame, sizeof(frame));
+	while (wpData->connected == true) {
+		if (countErrorAck == 3) {
+			wpData->status = IDLE;
+		}
+		if (wpData->status == SEND_MODE) {
+
+			framePter = dataLink->uploadedFrames->at(framePointIndex);
+			if (sendFrame(wpData->hComm, framePter, sizeof(framePter))){
+				if (waitACK()) {
+					countErrorAck = 0;
+					if (checkREQ()) {		//false, receive REQ or REQCounter == 3
+						OutputDebugString(_T("Send EOT, go to IDLE"));
+					}
+					else {
+						sendFrame(wpData->hComm, framePter, sizeof(framePter));
+					}
+				}
+				else {
+					//resent frame
+					if (sendFrame(wpData->hComm, framePter, sizeof(framePter))) {
+						OutputDebugString(_T("Resend Frame"));
+					}
+					countErrorAck++;
+				}
+			}
+			framePointIndex++;
+		}
+		else {
+			framePointIndex = 0;
+			//bid();
+		}
+	}
+	/*
+	dataLink->uploadedFrames->at(framePointIndex);
 	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
 	while (wpData->hComm != NULL) {
 		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) { 
@@ -244,6 +351,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			}
 		}
 	}
+	*/
 	return 1;
 }
 
@@ -266,6 +374,8 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	return 1;
 }
 
+
 int randomizeTimeOut(int range_min, int range_max){
 	return (double)rand() / (RAND_MAX + 1) * (range_max - range_min) + range_min;
 }
+

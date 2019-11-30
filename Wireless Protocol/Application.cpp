@@ -229,6 +229,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			}
 
 			break;
+
+		case IDM_SETTINGS:
+			sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
+			//printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
+			break;
 		case IDM_CONNECT:
 			if (wpData->connected == false) {
 				wpData->connected = true;
@@ -288,7 +293,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			DrawMenuBar(hwnd);
 			break;
 		}
-		Write(wpData->hComm, wParam);
+		//Write(wpData->hComm, wParam);
 		break;
 
 	case WM_PAINT:		// Process a repaint message
