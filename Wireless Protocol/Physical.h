@@ -13,6 +13,7 @@
 #define ACK			0x06
 #define REQ			0x11
 #define EOT			0x04
+#define FRAME_SIZE	1024
 
 HANDLE OpenPort(LPCWSTR lpszCommName);
 //int Write(HANDLE hComm, TCHAR character);
@@ -20,8 +21,8 @@ DWORD WINAPI ThreadSendProc(LPVOID n);
 DWORD WINAPI ThreadReceiveProc(LPVOID n);
 int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1);
 int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize);
-int sendFrame(HANDLE hComm, char frame[1024]);
-int waitACK(HANDLE hComm);
+int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead);
+int waitACK();
 
 struct PhysicalData {
 	;
