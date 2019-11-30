@@ -90,9 +90,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		1000, 800, NULL, NULL, hInst, NULL);
 	setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 	setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
-
-	HWND hWndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Edit"), TEXT("test"),
-		WS_CHILD | WS_VISIBLE , 0, 0, 1000, 800, wpData->hwnd, NULL, NULL, NULL);
+	
+	//This is here to test a text box 
+	//HWND hWndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Edit"), TEXT("test"),
+	//	WS_CHILD | WS_VISIBLE , 0, 0, 1000, 800, wpData->hwnd, NULL, NULL, NULL);
 
 
 	ShowWindow(wpData->hwnd, nCmdShow);
