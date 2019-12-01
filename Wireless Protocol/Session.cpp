@@ -105,6 +105,7 @@ void Disconnect(HWND hwnd) {
 	}
 }
 
+
 void prepareTransmission() {
 	OutputDebugString(_T("prep"));
 	Bid();
