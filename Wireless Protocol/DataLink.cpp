@@ -73,6 +73,12 @@ string crc(char* buffer) {
 	return result_in_hex;
 }
 
-bool checkFrame() {
-	return true;
-}
+//bool checkFrame() {
+//	if (dataLink->incomingFrames.size != 0) {
+//		char* targetFrame = dataLink->incomingFrames.at(0);
+//		string result_str = crc(targetFrame);
+//
+//	}
+//	
+//	return true;
+//}
