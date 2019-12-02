@@ -301,13 +301,13 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OutputDebugString(_T("Start Thread SEND"));
 	//test frames
 	char frame[1024] = { 'J', 'H', 'e', 'l', 'l', 'o' };
-	char frameEOT[2] = { 0 , 6 };
+	char frameEOT[2] = { 0 , 4 };
 	int size = sizeof(frame);
 	//test send
 	char* framePter;
 	int countErrorAck = 0;
 	
-	sendFrame(wpData->hComm, frame, sizeof(frame));
+	sendFrame(wpData->hComm, dataLink->uploadedFrames->at(framePointIndex), sizeof(frame));
 	while (wpData->connected == true) {
 		if (countErrorAck == 3) {
 			wpData->status = IDLE;
