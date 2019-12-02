@@ -174,7 +174,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	OVERLAPPED o1{ 0 };
 
 	char frame11[FRAME_SIZE];
-	strncpy(frame11, frame, FRAME_SIZE);
+	strncpy_s(frame11, frame, FRAME_SIZE);
 	//running completing asynchronously return false
 	if (!WriteFile(hComm, &frame11, nBytesToRead, 0, &o1))
 	{
@@ -301,13 +301,15 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OutputDebugString(_T("Start Thread SEND"));
 	//test frames
 	char frame[1024] = { 'J', 'H', 'e', 'l', 'l', 'o' };
+	char* frame211 = dataLink->uploadedFrames[0];
 	char frameEOT[2] = { 0 , 4 };
 	int size = sizeof(frame);
 	//test send
 	char* framePter;
 	int countErrorAck = 0;
-	
-	sendFrame(wpData->hComm, dataLink->uploadedFrames->at(framePointIndex), sizeof(frame));
+
+	WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
+	//sendFrame(wpData->hComm, frame, sizeof(frame));
 	while (wpData->connected == true) {
 		if (countErrorAck == 3) {
 			wpData->status = IDLE;
@@ -354,8 +356,8 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	*/
 	return 1;
 }
-
 DWORD WINAPI ThreadReceiveProc(LPVOID n) {
+
 	OVERLAPPED o1{ 0 };
 	char str[2];
 	str[1] = '\0';
@@ -372,6 +374,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 		}
 	}
 	return 1;
+	
 }
 
 
