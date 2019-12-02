@@ -22,9 +22,9 @@
 -- NOTES: Provides access to the physical communications link,by initializing the port, and handling receiving and writing characters
 ----------------------------------------------------------------------------------------------------------------------*/
 
-HANDLE ReceiveModeEvent;
+HANDLE ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE responseWaitEvent = CreateEvent(NULL, TRUE, TRUE, (LPTSTR)_T("ACK"));
-HANDLE ackEvent;
+HANDLE ackEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE eotEvent;
 int REQCounter = 0;
 
@@ -355,27 +355,151 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	return 1;
 }
 
-DWORD WINAPI ThreadReceiveProc(LPVOID n) {
-	OVERLAPPED o1{ 0 };
-	char str[2];
-	str[1] = '\0';
-	DWORD CommEvent{ 0 };
-	static unsigned x = 0;
-	static unsigned y = 0;
-	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
-	while (wpData->hComm != NULL) {
-		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
-			if (Read(wpData->hComm, str, 1, NULL, &o1)) {
-				wpData->hdc = GetDC(wpData->hwnd);
-				printToWindow(wpData->hwnd, wpData->hdc, str, &x, &y); // print character
+// 
+//
+//
+//
+//
+//
+int ReadInput(char* buffer) {
+	DWORD dwRes{ 0 };
+	DWORD dwRead{ 0 };
+	OVERLAPPED osReader = { 0 };
+	osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	int maxSize = 1024;
+	int bufferSize = 0;
+	char tempBuffer[2];
+	tempBuffer[1] = '\0';
+	while (bufferSize < maxSize) {
+		if (!ReadFile(wpData->hComm, tempBuffer, 1, &dwRead, &osReader)) {
+			if (GetLastError() != ERROR_IO_PENDING) { // something occured other than waiting for read to complete
+				return 0;
 			}
+			else {
+				dwRes = WaitForSingleObject(osReader.hEvent, 100);  // wait for the read to complete
+			}
+			if (dwRes == WAIT_OBJECT_0) {	// object was signaled, read completed
+				if (tempBuffer[0] == SYN0 || SYN1) {
+					if (tempBuffer[0] != wpData->currentSyncByte) {
+						return 0;
+					}
+				}
+				else {
+					return 0;
+				}
+				buffer[bufferSize] = tempBuffer[0];
+				if (buffer[bufferSize] == EOT) {
+					wpData->status == IDLE; // Received end of transmission
+					return 1;
+				}
+			}
+			return 1;
 		}
 	}
+}
+
+
+
+DWORD WINAPI ThreadReceiveProc(LPVOID n) {
+	DWORD CommEvent;
+	OVERLAPPED ol;
+	char str[3];
+	char buffer[1024];
+	while (wpData->connected == true) {
+		if (wpData->status == RECEIVE_MODE) {
+			if (WaitInput(3000) == 1) { // wait 3 seconds for something to arrive in my buffer
+				if (ReadInput(buffer)) {
+					/*if (checkFrame(buffer) == 1) {
+						sendAcknowledgment();
+					}*/
+					//send to datalink to verify checksum for this frame
+					// if good, sendAcknowledgment()
+					// else, dont do anything
+				}
+				// but if we received an EOT, simply set the state to IDLE, so the bidding can happen.
+				// read byte by byte
+				// and then after checking sync byte, send it over to datalink
+
+			}
+			else {
+				wpData->status = IDLE; // timed out
+			}
+		}
+		else if (wpData->status == IDLE) {
+			SetCommMask(wpData->hComm, EV_RXCHAR);
+			if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+				if (Read(wpData->hComm, str, 2, NULL, &ol)) {
+					if (str[0] == wpData->currentSyncByte && str[1] == ENQ) {
+						sendAcknowledgment();
+					}
+				}
+				// if i receive ack
+				// if i am in idle and have seomthing to send
+				// set event received ACK to true.
+			}
+		}
+
+		// i am in sending mode and i am waiting to receive an ACK.
+		else if (wpData->status == SEND_MODE) {
+			SetCommMask(wpData->hComm, EV_RXCHAR);
+			if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+				if (Read(wpData->hComm, str, 2, NULL, &ol)) {
+					if (str[0] == wpData->currentSyncByte && str[1] == REQ ) {
+						wpData->receivedREQ = true;
+						SetEvent(ackEvent);
+					}
+					else if (str[0] == wpData->currentSyncByte && str[1] == ACK) {
+						SetEvent(ackEvent);
+					}
+				}
+			}
+			return 1;
+		}
+	}
+}
+
+int WaitInput(DWORD secs) {
+	COMSTAT cs;
+	DWORD dwEvtMask{ 0 };
+	SetCommMask(wpData->hComm, EV_RXCHAR);
+	OVERLAPPED ol;
+	ol.hEvent = CreateEvent(NULL, TRUE, FALSE, 0);
+	if (!WaitCommEvent(wpData->hComm, &dwEvtMask, &ol))
+	{
+		if (GetLastError() == ERROR_IO_PENDING)
+		{
+			if (WaitForSingleObject(ol.hEvent, secs) != WAIT_OBJECT_0)
+				return 0;
+		}
+	}
+	CloseHandle(ol.hEvent);
 	return 1;
 }
 
+int sendAcknowledgment() {
+	OVERLAPPED ol{ 0 };
+	char acknowledge[2];
+	acknowledge[0] = wpData->currentSyncByte; //SYN0 or SYN1
+	if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == false) {
+		acknowledge[1] = ACK;
+	}
+	else if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == true) {
+		acknowledge[1] = REQ;
+	}
+	else if (wpData->status == IDLE) {
+		acknowledge[1] = ACK;
+		wpData->status = RECEIVE_MODE;
+	}
+	if (!WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol)) {
+		OutputDebugString("Failed to send acknowledgment");
+	}
+
+}
 
 int randomizeTimeOut(int range_min, int range_max){
 	return (double)rand() / (RAND_MAX + 1) * (range_max - range_min) + range_min;
 }
 
+void swapSyncByte() {
+	wpData->currentSyncByte = wpData->currentSyncByte == 0x00 ? 0xFF : 0x00;
+}

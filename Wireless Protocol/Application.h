@@ -17,6 +17,7 @@ struct Data {
 	bool fileUploaded;
 	int status;
 	bool sentdEnq;
+	char currentSyncByte;
 };
 extern Data * wpData;
 

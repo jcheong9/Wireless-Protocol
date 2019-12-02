@@ -25,9 +25,12 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize);
 
 int randomizeTimeOut(int range_min, int range_max);
+int sendAcknowledgment();
+void swapSyncByte();
 int Bid();
 int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead);
 int waitACK();
+
 
 struct PhysicalData {
 	;

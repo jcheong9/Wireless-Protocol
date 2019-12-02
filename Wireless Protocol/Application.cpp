@@ -60,6 +60,7 @@ Data* wpData = new Data();
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow)
 {
+	wpData->currentSyncByte = 0x00;
 	wpData->connected = false;
 	wpData->status = IDLE;
 	wpData->hComm = NULL;
