@@ -314,7 +314,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 		}
 		if (wpData->status == SEND_MODE) {
 
-			framePter = dataLink->uploadedFrames->at(framePointIndex);
+			framePter = dataLink->uploadedFrames.at(framePointIndex);
 			if (sendFrame(wpData->hComm, framePter, sizeof(framePter))){
 				if (waitACK()) {
 					countErrorAck = 0;

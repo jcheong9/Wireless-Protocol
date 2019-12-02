@@ -2,13 +2,19 @@
 #include <string>
 #include <vector>
 #include <fstream>
-
-#define DWORD_SIZE 1017;
+#include <crc.hpp>
+#include <sstream>
 using namespace std;
-int packetizeFile(string filePath);
+bool packetizeFile(string filePath);
+bool checkFrame();
+string crc(char* buffer, streamsize buffer_size);
+void clearReceivingBuffer();
+void storePrintingBuffer(char* dataword);
 
 struct DataLink {
-	vector<char [1024]>* uploadedFrames;
+	vector<char*> uploadedFrames;
+	vector<char*> incomingFrames;
+	vector<string> validDataword;
 };
 
 extern DataLink* dataLink;

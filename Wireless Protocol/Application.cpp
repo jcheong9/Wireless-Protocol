@@ -256,11 +256,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
 					wpData->fileUploaded = true;
 				}
+				//if you want to test check frame function, uncomment the codes below
+				//else {
+				//	dataLink->incomingFrames.push_back(dataLink->uploadedFrames.at(0));
+				//	checkFrame();
+				//}
 			}
 			else {
 				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);
 			}
-
 
 			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
