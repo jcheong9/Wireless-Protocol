@@ -209,7 +209,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	ZeroMemory(&ofn, sizeof(ofn));
 	HANDLE readThread = NULL;
 	DWORD threadId;
-	LPCSTR portNumber = (LPCSTR)"COM5";
+	LPCSTR portNumber = (LPCSTR)"COM1";
 
 
 
@@ -233,10 +233,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_SETTINGS:
-			sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
 			//printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
 			break;
 		case IDM_CONNECT:
+
+				sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
 			if (wpData->connected == false) {
 				wpData->connected = true;
 				wpData->hdc = GetDC(wpData->hwnd);
