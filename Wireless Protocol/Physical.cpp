@@ -178,7 +178,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	//running completing asynchronously return false
 	if (!WriteFile(hComm, frame, nBytesToRead, 0, &o1))
 	{
-		if (frame11[1] == EOT) {
+		if (frame[1] == EOT) {
 			wpData->status = IDLE;
 		}
 		OutputDebugString(_T("Send to port."));
@@ -208,23 +208,44 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 int waitACK() {
-	DWORD CommEvent{ 0 };
-	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
-	if (!WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+
+	if (WaitForSingleObject(ackEvent, 1000) == WAIT_OBJECT_0) {
+		//reset ack event
+		ResetEvent(ackEvent);
 		return 1;
 	}
 	return 0;
 }
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: checkREQ
+--
+-- DATE: November 11, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Jameson Cheong
+--
+-- PROGRAMMER: Jameson Cheong
+--
+-- INTERFACE: int checkREQ()
+--
+--
+-- RETURNS: int 1 when receive ACK; int 0 when no ACK
+--
+-- NOTES: Waits for an ACK using event driven.
+--
+----------------------------------------------------------------------------------------------------------------------*/
 //return 0 no REQ or REQCounter < 3
 int checkREQ() {
 	char frameEOT[2] = { 255, EOT };
 	if (wpData->receivedREQ == TRUE && REQCounter < 3) {
 		REQCounter++;
 		if (REQCounter == 3) {
-			//To do sent EOF .... need packize eot frame
+			//To do sent EOT .... need packize eot frame
 			
 			if (!sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
-
+				OutputDebugString(_T("Sent EOT."));
 			}
 			WaitForSingleObject(eotEvent, 1000);
 			wpData->status = IDLE;
@@ -308,22 +329,25 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	//test send
 	char* framePter;
 	int countErrorAck = 0;
+	bool errorAck = false;
+	//wpData->fileUploaded = false;
 
 	//WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
 	//sendFrame(wpData->hComm, frameREQ, 1024);
 	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
 	while (wpData->connected == true) {
 		if (countErrorAck == 3) {
+			countErrorAck = 0;
 			wpData->status = IDLE;
 		}
 		if (wpData->status == SEND_MODE || framePointIndex < dataLink->uploadedFrames.size()) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)){
 				if (waitACK()) {
+					errorAck = false;
 					countErrorAck = 0;
 					if (checkREQ()) {		//false, receive REQ or REQCounter == 3
 						OutputDebugString(_T("Send EOT, go to IDLE"));
-						wpData->fileUploaded = false;
 					}
 					else {
 						sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024);
@@ -331,21 +355,22 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				}
 				else {
 					//resent frame
+					errorAck = true;
 					if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
 						OutputDebugString(_T("Resend Frame"));
 					}
 					countErrorAck++;
 				}
 			}
-			if (framePointIndex < dataLink->uploadedFrames.size()) {
+			if (framePointIndex < dataLink->uploadedFrames.size() && !errorAck) {
 				framePointIndex++;
 			}
-			else {
+			else if(framePointIndex >= dataLink->uploadedFrames.size()){
 				framePointIndex = 0; 
+				wpData->fileUploaded = false;
 			}
 		}
 		else if(wpData->status == IDLE){
-			//framePointIndex = 0; ---
 			Bid();
 		}
 	}
