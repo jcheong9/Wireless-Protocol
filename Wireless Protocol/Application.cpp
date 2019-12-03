@@ -248,7 +248,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 				}
 			}
-			prepareTransmission();
+
 			break;
 
 		case IDM_UPLOADFILE:
