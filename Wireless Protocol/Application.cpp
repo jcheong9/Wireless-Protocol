@@ -248,7 +248,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 				}
 			}
-			prepareTransmission();
+
 			break;
 
 		case IDM_UPLOADFILE:
@@ -276,6 +276,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_DISCONNECT:
 			wpData->connected = false;
+			wpData->status = COMMAND_MODE;
 			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED );
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 			break;

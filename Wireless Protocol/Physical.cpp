@@ -59,15 +59,15 @@ int Bid() {
 	ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	HANDLE dummy = CreateEvent(NULL, TRUE, FALSE, NULL);
 
+	char frameENQ[2] = { 0, ENQ };
 
-	OutputDebugString(_T("Bidding"));
-	if (wpData->fileUploaded && wpData->status == IDLE) {
-		if (WriteFile(wpData->hComm, (LPCVOID)(SYN0 + ENQ), 2, NULL, &o1)) {
-			if (WaitForSingleObject(ReceiveModeEvent, timeoutToReceive) == WAIT_OBJECT_0) {
+	if (wpData->fileUploaded) {
+		if (WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1)) {
+			if (WaitForSingleObject(ackEvent, timeoutToReceive) == WAIT_OBJECT_0) {
+				ResetEvent(ackEvent);
 				wpData->sentdEnq = true;
 				OutputDebugString(_T("Received"));
 				wpData->status = SEND_MODE;
-				//continue;
 			}
 			//timeout
 			else {
@@ -78,7 +78,6 @@ int Bid() {
 			}
 		}
 	}
-
 
 	return 1;
 }
@@ -156,7 +155,7 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Jameson Cheong
 --
 -- PROGRAMMER: Jameson Cheong
 --
@@ -174,18 +173,16 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	OVERLAPPED o1{ 0 };
 
 	char frame11[FRAME_SIZE];
-	//strncpy_s(frame11, frame, FRAME_SIZE);
-	//running completing asynchronously return false
-	if (!WriteFile(hComm, frame, nBytesToRead, 0, &o1))
-	{
-		if (frame[1] == EOT) {
-			wpData->status = IDLE;
-		}
-		OutputDebugString(_T("Send to port."));
-		return 1;
-	}
 
-	return 0;
+	//running completing asynchronously return false
+	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
+	wpData->currentSyncByte = frame[0];
+	if (frame[1] == EOT) {
+		wpData->status = IDLE;
+	}
+	OutputDebugString(_T("Send to port."));
+
+	return 1;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -370,22 +367,10 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				wpData->fileUploaded = false;
 			}
 		}
-		else if(wpData->status == IDLE){
+		else if(wpData->status == IDLE){	
 			Bid();
 		}
 	}
-	/*
-	dataLink->uploadedFrames->at(framePointIndex);
-	SetCommMask(wpData->hComm, EV_RXCHAR); // event-driven
-	while (wpData->hComm != NULL) {
-		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) { 
-			if (Read(wpData->hComm, str, 1, NULL, &o1)) { 
-				wpData->hdc = GetDC(wpData->hwnd); 
-				printToWindow(wpData->hwnd, wpData->hdc, str, &x, &y); // print character
-			}
-		}
-	}
-	*/
 	return 1;
 }
 
