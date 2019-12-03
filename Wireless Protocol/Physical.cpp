@@ -363,6 +363,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	*/
 	return 1;
 }
+DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 
 int ReadInput(char* buffer) {
 	DWORD dwRes{ 0 };
