@@ -256,6 +256,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
 					wpData->fileUploaded = true;
 				}
+				else {
+					vector<char*> a = dataLink->uploadedFrames;
+					int b = a.size();
+				}
 				//if you want to test check frame function, uncomment the codes below
 				//else {
 				//	dataLink->incomingFrames.push_back(dataLink->uploadedFrames.at(0));

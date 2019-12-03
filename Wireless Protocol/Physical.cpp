@@ -493,7 +493,7 @@ int sendAcknowledgment() {
 	if (!WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol)) {
 		OutputDebugString("Failed to send acknowledgment");
 	}
-
+	return 0;
 }
 
 int randomizeTimeOut(int range_min, int range_max){
