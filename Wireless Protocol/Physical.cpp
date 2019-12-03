@@ -394,11 +394,11 @@ int ReadInput(char* buffer) {
 				dwRes = WaitForSingleObject(osReader.hEvent, 100);  // wait for the read to complete
 			}
 			if (dwRes == WAIT_OBJECT_0) {	// object was signaled, read completed
-				if (tempBuffer[0] == ACK || tempBuffer[0] == REQ)
+				/*if (tempBuffer[0] == ACK || tempBuffer[0] == ENQ)
 					buffer[bufferSize] = tempBuffer[0];
-					return 1;
+					break;
 				}
-				else {
+				else {*/
 					buffer[bufferSize] = tempBuffer[0];
 					bufferSize++;
 				}
@@ -408,6 +408,10 @@ int ReadInput(char* buffer) {
 				//	return 1;
 				//}
 			}
+		else {
+			buffer[bufferSize] = tempBuffer[0];
+			bufferSize++;
+		}
 		}
 	return 1;
 }
