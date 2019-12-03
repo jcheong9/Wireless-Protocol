@@ -369,7 +369,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				wpData->status = IDLE;
 			}
 		}
-		else if(wpData->status == IDLE){	
+		else if(wpData->status == IDLE && wpData->fileUploaded){	
 			Bid();
 		}
 	}
