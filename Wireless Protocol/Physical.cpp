@@ -340,7 +340,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			countErrorAck = 0;
 			wpData->status = IDLE;
 		}
-		if (wpData->status == SEND_MODE || framePointIndex < dataLink->uploadedFrames.size()) {
+		if (wpData->status == SEND_MODE) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)){
 				if (waitACK()) {
@@ -388,7 +388,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	*/
 	return 1;
 }
-DWORD WINAPI ThreadReceiveProc(LPVOID n) {
+
 
 int ReadInput(char* buffer) {
 	DWORD dwRes{ 0 };
