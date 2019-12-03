@@ -177,9 +177,6 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	//running completing asynchronously return false
 	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
 	wpData->currentSyncByte = frame[0];
-	if (frame[1] == EOT) {
-		wpData->status = IDLE;
-	}
 	OutputDebugString(_T("Send to port."));
 
 	return 1;
@@ -241,7 +238,7 @@ int checkREQ() {
 		if (REQCounter == 3) {
 			//To do sent EOT .... need packize eot frame
 			
-			if (!sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
+			if (sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
 				OutputDebugString(_T("Sent EOT."));
 			}
 			WaitForSingleObject(eotEvent, 1000);
@@ -332,6 +329,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	//WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
 	//sendFrame(wpData->hComm, frameREQ, 1024);
 	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
+	wpData->status = SEND_MODE;
 	while (wpData->connected == true) {
 		if (countErrorAck == 3) {
 			countErrorAck = 0;
@@ -340,7 +338,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 		if (wpData->status == SEND_MODE) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)){
-				if (waitACK()) {
+				if (waitACK() || true) {
 					errorAck = false;
 					countErrorAck = 0;
 					if (checkREQ()) {		//false, receive REQ or REQCounter == 3
@@ -359,12 +357,15 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					countErrorAck++;
 				}
 			}
-			if (framePointIndex < dataLink->uploadedFrames.size() && !errorAck) {
+			if (framePointIndex < dataLink->uploadedFrames.size() - 1 && !errorAck) {
 				framePointIndex++;
 			}
-			else if(framePointIndex >= dataLink->uploadedFrames.size()){
+			else if(framePointIndex == dataLink->uploadedFrames.size() - 1){
 				framePointIndex = 0; 
 				wpData->fileUploaded = false;
+				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
+				WaitForSingleObject(eotEvent, 1000);
+				wpData->status = IDLE;
 			}
 		}
 		else if(wpData->status == IDLE){	
