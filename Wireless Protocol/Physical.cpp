@@ -333,6 +333,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	while (wpData->connected == true) {
 		if (countErrorAck == 3) {
 			countErrorAck = 0;
+			OutputDebugString(_T("error ack"));
 			wpData->status = IDLE;
 		}
 		if (wpData->status == SEND_MODE) {
