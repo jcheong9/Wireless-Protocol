@@ -255,6 +255,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			if (addFile(ofn)) {
 				if (packetizeFile(ofn.lpstrFile) != 1) {
 					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
+					
+				}else {
 					wpData->fileUploaded = true;
 				}
 				//if you want to test check frame function, uncomment the codes below

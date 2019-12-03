@@ -18,6 +18,7 @@ struct Data {
 	int status;
 	bool sentdEnq;
 	char currentSyncByte;
+
 };
 extern Data * wpData;
 

@@ -174,9 +174,9 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	OVERLAPPED o1{ 0 };
 
 	char frame11[FRAME_SIZE];
-	strncpy_s(frame11, frame, FRAME_SIZE);
+	//strncpy_s(frame11, frame, FRAME_SIZE);
 	//running completing asynchronously return false
-	if (!WriteFile(hComm, &frame11, nBytesToRead, 0, &o1))
+	if (!WriteFile(hComm, frame, nBytesToRead, 0, &o1))
 	{
 		if (frame11[1] == EOT) {
 			wpData->status = IDLE;
@@ -300,46 +300,53 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	int framePointIndex = 0;
 	OutputDebugString(_T("Start Thread SEND"));
 	//test frames
-	char frame[1024] = { 'J', 'H', 'e', 'l', 'l', 'o' };
+	//char frame[1024] = { 'J', 'H', 'e', 'l', 'l', 'o' };
 	char* frame211 = dataLink->uploadedFrames[0];
-	char frameEOT[2] = { 0 , 4 };
-	int size = sizeof(frame);
+	char frameEOT[2] = { 0 , EOT };
+	char frameREQ[2] = { 0 , REQ };
+	//int size = sizeof(frame);
 	//test send
 	char* framePter;
 	int countErrorAck = 0;
 
-	WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
-	//sendFrame(wpData->hComm, frame, sizeof(frame));
+	//WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
+	//sendFrame(wpData->hComm, frameREQ, 1024);
+	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
 	while (wpData->connected == true) {
 		if (countErrorAck == 3) {
 			wpData->status = IDLE;
 		}
-		if (wpData->status == SEND_MODE) {
-
-			framePter = dataLink->uploadedFrames.at(framePointIndex);
-			if (sendFrame(wpData->hComm, framePter, sizeof(framePter))){
+		if (wpData->status == SEND_MODE || framePointIndex < dataLink->uploadedFrames.size()) {
+			//framePter = dataLink->uploadedFrames.at(framePointIndex);
+			if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)){
 				if (waitACK()) {
 					countErrorAck = 0;
 					if (checkREQ()) {		//false, receive REQ or REQCounter == 3
 						OutputDebugString(_T("Send EOT, go to IDLE"));
+						wpData->fileUploaded = false;
 					}
 					else {
-						sendFrame(wpData->hComm, framePter, sizeof(framePter));
+						sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024);
 					}
 				}
 				else {
 					//resent frame
-					if (sendFrame(wpData->hComm, framePter, sizeof(framePter))) {
+					if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
 						OutputDebugString(_T("Resend Frame"));
 					}
 					countErrorAck++;
 				}
 			}
-			framePointIndex++;
+			if (framePointIndex < dataLink->uploadedFrames.size()) {
+				framePointIndex++;
+			}
+			else {
+				framePointIndex = 0; 
+			}
 		}
-		else {
-			framePointIndex = 0;
-			//bid();
+		else if(wpData->status == IDLE){
+			//framePointIndex = 0; ---
+			Bid();
 		}
 	}
 	/*
@@ -356,14 +363,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	*/
 	return 1;
 }
-DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 
-// 
-//
-//
-//
-//
-//
 int ReadInput(char* buffer) {
 	DWORD dwRes{ 0 };
 	DWORD dwRead{ 0 };
@@ -497,7 +497,7 @@ int sendAcknowledgment() {
 	if (!WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol)) {
 		OutputDebugString("Failed to send acknowledgment");
 	}
-
+	return 0;
 }
 
 int randomizeTimeOut(int range_min, int range_max){
