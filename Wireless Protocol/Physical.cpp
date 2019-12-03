@@ -393,83 +393,63 @@ int ReadInput(char* buffer) {
 				dwRes = WaitForSingleObject(osReader.hEvent, 100);  // wait for the read to complete
 			}
 			if (dwRes == WAIT_OBJECT_0) {	// object was signaled, read completed
-				if (tempBuffer[0] == SYN0 || SYN1) {
-					if (tempBuffer[0] != wpData->currentSyncByte) {
-						return 0;
-					}
-				}
-				else {
-					return 0;
-				}
-				buffer[bufferSize] = tempBuffer[0];
-				if (buffer[bufferSize] == EOT) {
-					wpData->status == IDLE; // Received end of transmission
+				if (tempBuffer[0] == ACK || tempBuffer[0] == REQ)
+					buffer[bufferSize] = tempBuffer[0];
 					return 1;
 				}
+				else {
+					buffer[bufferSize] = tempBuffer[0];
+					bufferSize++;
+				}
+	
+				//if (buffer[bufferSize] == EOT) {
+				//	wpData->status == IDLE; // Received end of transmission
+				//	return 1;
+				//}
 			}
-			return 1;
 		}
-	}
+	return 1;
 }
 
 
 
 DWORD WINAPI ThreadReceiveProc(LPVOID n) {
+	unsigned static int x = 0;
+	unsigned static int y = 0;
 	DWORD CommEvent;
 	OVERLAPPED ol;
 	char str[3];
 	char buffer[1024];
+	char control;
 	while (wpData->connected == true) {
-		if (wpData->status == RECEIVE_MODE) {
-			if (WaitInput(3000) == 1) { // wait 3 seconds for something to arrive in my buffer
-				if (ReadInput(buffer)) {
-					/*if (checkFrame(buffer) == 1) {
-						sendAcknowledgment();
-					}*/
-					//send to datalink to verify checksum for this frame
-					// if good, sendAcknowledgment()
-					// else, dont do anything
-				}
-				// but if we received an EOT, simply set the state to IDLE, so the bidding can happen.
-				// read byte by byte
-				// and then after checking sync byte, send it over to datalink
-
-			}
-			else {
-				wpData->status = IDLE; // timed out
-			}
-		}
-		else if (wpData->status == IDLE) {
-			SetCommMask(wpData->hComm, EV_RXCHAR);
-			if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
-				if (Read(wpData->hComm, str, 2, NULL, &ol)) {
-					if (str[0] == wpData->currentSyncByte && str[1] == ENQ) {
-						sendAcknowledgment();
+		SetCommMask(wpData->hComm, EV_RXCHAR);
+		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+			OutputDebugString("Received something");
+			ReadInput(buffer);
+			if (buffer[1] == ENQ && wpData->status == IDLE) {
+				OutputDebugString("Received an ENQ");
+				control = buffer[0];
+				sendAcknowledgment(control);
+				wpData->status = RECEIVE_MODE;
+				while (wpData->status == RECEIVE_MODE) {
+					if (!WaitInput(3000)) {
+						wpData->status = IDLE;
 					}
-				}
-				// if i receive ack
-				// if i am in idle and have seomthing to send
-				// set event received ACK to true.
-			}
-		}
-
-		// i am in sending mode and i am waiting to receive an ACK.
-		else if (wpData->status == SEND_MODE) {
-			SetCommMask(wpData->hComm, EV_RXCHAR);
-			if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
-				if (Read(wpData->hComm, str, 2, NULL, &ol)) {
-					if (str[0] == wpData->currentSyncByte && str[1] == REQ ) {
-						wpData->receivedREQ = true;
-						SetEvent(ackEvent);
-					}
-					else if (str[0] == wpData->currentSyncByte && str[1] == ACK) {
-						SetEvent(ackEvent);
+					else {
+						OutputDebugString("Received something");
+						ReadInput(buffer);
+						printToWindow(wpData->hwnd, wpData->hdc, buffer, &x, &y);
+						control = buffer[0];
+						sendAcknowledgment(control);
 					}
 				}
 			}
-			return 1;
+			else if (buffer[1] == ACK &&  buffer[0] == wpData->currentSyncByte && wpData->status == SEND_MODE ) {
+				SetEvent(ackEvent);
+			}
 		}
 	}
+	return 1;
 }
 
 int WaitInput(DWORD secs) {
@@ -491,10 +471,10 @@ int WaitInput(DWORD secs) {
 	
 }
 
-int sendAcknowledgment() {
+int sendAcknowledgment(char control) {
 	OVERLAPPED ol{ 0 };
 	char acknowledge[2];
-	acknowledge[0] = wpData->currentSyncByte; //SYN0 or SYN1
+	acknowledge[0] = control;
 	if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == false) {
 		acknowledge[1] = ACK;
 	}
@@ -503,7 +483,6 @@ int sendAcknowledgment() {
 	}
 	else if (wpData->status == IDLE) {
 		acknowledge[1] = ACK;
-		wpData->status = RECEIVE_MODE;
 	}
 	if (!WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol)) {
 		OutputDebugString("Failed to send acknowledgment");
@@ -518,3 +497,46 @@ int randomizeTimeOut(int range_min, int range_max){
 void swapSyncByte() {
 	wpData->currentSyncByte = wpData->currentSyncByte == 0x00 ? 0xFF : 0x00;
 }
+
+//			//send to datalink to verify checksum for this frame
+//			// if good, sendAcknowledgment()
+//			// else, dont do anything
+//		}
+//		// but if we received an EOT, simply set the state to IDLE, so the bidding can happen.
+//		// read byte by byte
+//		// and then after checking sync byte, send it over to datalink
+
+//	}
+//}
+////	else {
+////		wpData->status = IDLE; // timed out
+////	}
+////}
+////else if (wpData->status == IDLE) {
+////	SetCommMask(wpData->hComm, EV_RXCHAR);
+////	if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+////		if (Read(wpData->hComm, str, 2, NULL, &ol)) {
+////			if (str[0] == wpData->currentSyncByte && str[1] == ENQ) {
+////				sendAcknowledgment();
+////			}
+////		}
+////		// if i receive ack
+////		// if i am in idle and have seomthing to send
+////		// set event received ACK to true.
+////	}
+////}
+
+////// i am in sending mode and i am waiting to receive an ACK.
+////else if (wpData->status == SEND_MODE) {
+////	SetCommMask(wpData->hComm, EV_RXCHAR);
+////	if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
+////		if (Read(wpData->hComm, str, 2, NULL, &ol)) {
+////			if (str[0] == wpData->currentSyncByte && str[1] == REQ ) {
+////				wpData->receivedREQ = true;
+////				SetEvent(ackEvent);
+////			}
+////			else if (str[0] == wpData->currentSyncByte && str[1] == ACK) {
+////				SetEvent(ackEvent);
+////			}
+////		}
+////	}
