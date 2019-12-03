@@ -258,6 +258,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 					
 				}else {
 					wpData->fileUploaded = true;
+					vector<char*> a = dataLink->uploadedFrames;
+					int b = a.size();
 				}
 				//if you want to test check frame function, uncomment the codes below
 				//else {

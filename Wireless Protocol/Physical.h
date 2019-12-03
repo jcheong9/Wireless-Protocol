@@ -32,7 +32,6 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead);
 int waitACK();
 int WaitInput(DWORD secs);
 
-
 struct PhysicalData {
 	;
 };
