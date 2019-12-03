@@ -7,6 +7,10 @@
 //#include "Physical.h"
 #include "DataLink.h"
 #include <tchar.h>
+#define IDLE			50
+#define RECEIVE_MODE	51
+#define SEND_MODE		52
+#define COMMAND_MODE	53
 
 struct Data {
 	HANDLE hComm;
@@ -15,8 +19,10 @@ struct Data {
 	BOOL receivedREQ;
 	bool connected;
 	bool fileUploaded;
-	int status;
+	int status = COMMAND_MODE;
 	bool sentdEnq;
+	char currentSyncByte = 0;
+
 	HWND labels;
 };
 extern Data * wpData;
@@ -26,9 +32,7 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);
 void printToWindowsNew(char* str);
 
-#define IDLE			50
-#define RECEIVE_MODE	51
-#define SEND_MODE		52
+
 
 
 #endif

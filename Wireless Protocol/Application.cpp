@@ -71,6 +71,7 @@ Data* wpData = new Data();
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow)
 {
+	wpData->currentSyncByte = 0x00;
 	wpData->connected = false;
 	wpData->status = IDLE;
 	wpData->hComm = NULL;
@@ -243,7 +244,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	ZeroMemory(&ofn, sizeof(ofn));
 	HANDLE readThread = NULL;
 	DWORD threadId;
-	LPCSTR portNumber = (LPCSTR)"COM5";
+	LPCSTR portNumber = (LPCSTR)"COM1";
 
 
 
@@ -267,28 +268,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_SETTINGS:
-			sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
 			//printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
 			break;
 		case IDM_CONNECT:
+
 			if (wpData->connected == false) {
 				wpData->connected = true;
 				wpData->hdc = GetDC(wpData->hwnd);
 				if (readThread == NULL) {
+					sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
 					readThread = CreateThread(NULL, 0, ThreadReceiveProc, &wpData, 0, &threadId);
 					setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 					setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_ENABLED);
 
 				}
 			}
-			prepareTransmission();
+
 			break;
 
 		case IDM_UPLOADFILE:
 			if (addFile(ofn)) {
 				if (packetizeFile(ofn.lpstrFile) != 1) {
-					//MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
+					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
+					
+				}else {
 					wpData->fileUploaded = true;
+					vector<char*> a = dataLink->uploadedFrames;
+					int b = a.size();
 				}
 				//if you want to test check frame function, uncomment the codes below
 				//else {
@@ -304,6 +310,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_DISCONNECT:
+			wpData->connected = false;
+			wpData->status = COMMAND_MODE;
 			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED );
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 			break;
