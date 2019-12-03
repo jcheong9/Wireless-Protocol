@@ -61,7 +61,7 @@ int Bid() {
 
 
 	OutputDebugString(_T("Bidding"));
-	if (wpData->fileUploaded && wpData->status == IDLE) {
+	if (wpData->fileUploaded) {
 		if (WriteFile(wpData->hComm, (LPCVOID)(SYN0 + ENQ), 2, NULL, &o1)) {
 			if (WaitForSingleObject(ReceiveModeEvent, timeoutToReceive) == WAIT_OBJECT_0) {
 				wpData->sentdEnq = true;
@@ -78,7 +78,6 @@ int Bid() {
 			}
 		}
 	}
-
 
 	return 1;
 }
@@ -370,7 +369,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				wpData->fileUploaded = false;
 			}
 		}
-		else if(wpData->status == IDLE){
+		else if(wpData->status == IDLE || true){
 			Bid();
 		}
 	}
