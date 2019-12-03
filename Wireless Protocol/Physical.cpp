@@ -316,7 +316,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OutputDebugString(_T("Start Thread SEND"));
 	//test frames
 	//char frame[1024] = { 'J', 'H', 'e', 'l', 'l', 'o' };
-	char* frame211 = dataLink->uploadedFrames[0];
+	//char* frame211 = dataLink->uploadedFrames[0];
 	char frameEOT[2] = { 0 , EOT };
 	char frameREQ[2] = { 0 , REQ };
 	//int size = sizeof(frame);
@@ -329,7 +329,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	//WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
 	//sendFrame(wpData->hComm, frameREQ, 1024);
 	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
-	wpData->status = SEND_MODE;
+
 	while (wpData->connected == true) {
 		if (countErrorAck == 3) {
 			countErrorAck = 0;
