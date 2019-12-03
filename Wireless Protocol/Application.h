@@ -17,12 +17,14 @@ struct Data {
 	bool fileUploaded;
 	int status;
 	bool sentdEnq;
+	HWND labels;
 };
 extern Data * wpData;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);
+void printToWindowsNew(char* str);
 
 #define IDLE			50
 #define RECEIVE_MODE	51

@@ -106,12 +106,12 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
-      <AdditionalIncludeDirectories>D:\Lectures\Term3\Comp 3980 Data Comm Internetworking\Wireless-Protocol\Wireless Protocol;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ameer\OneDrive\Desktop\COMP3980\Github\Wireless-Protocol\Wireless Protocol;D:\Lectures\Term3\Comp 3980 Data Comm Internetworking\Wireless-Protocol\Wireless Protocol;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Lectures\Term3\Comp 3980 Data Comm Internetworking\Wireless-Protocol\Wireless Protocol;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Lectures\Term3\Comp 3980 Data Comm Internetworking\Wireless-Protocol\Wireless Protocol;C:\Users\ameer\OneDrive\Desktop\COMP3980\Github\Wireless-Protocol\Wireless Protocol;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

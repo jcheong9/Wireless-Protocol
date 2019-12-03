@@ -1,7 +1,18 @@
 
 #include "Application.h"
-
+#include <CommCtrl.h>
+#include <stdio.h>
 #pragma warning (disable: 4096)
+
+static HWND hList = NULL;  // List View identifier
+LVCOLUMN LvCol;
+LVITEM LvItem;
+char Temp[255] = "";
+
+HWND textHwnd;
+char* buff;
+char* buffNewText;
+char* newBuffer;
 
 /*------------------------------------------------------------------------------------------------------------------
 -- SOURCE FILE: Application.c - An application that will act as a dumb terminal
@@ -91,14 +102,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 	setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 	
-	//This is here to test a text box 
-	//HWND hWndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Edit"), TEXT("test"),
-	//	WS_CHILD | WS_VISIBLE , 0, 0, 1000, 800, wpData->hwnd, NULL, NULL, NULL);
 
+	textHwnd = CreateWindow("EDIT", "Text Goes Here", 
+		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_MULTILINE | WS_VSCROLL | ES_READONLY , 0, 0, 800, 800, wpData->hwnd, NULL, hInst, NULL);
 
 	ShowWindow(wpData->hwnd, nCmdShow);
 	UpdateWindow(wpData->hwnd);
-
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
 		TranslateMessage(&Msg);
@@ -161,6 +170,7 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 {
+
 	TextOut(wpData->hdc, *x,  *y,  str, strlen(str));
 	SIZE size;
 	TEXTMETRIC tm;
@@ -172,6 +182,31 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 		*y = *y + tm.tmHeight + tm.tmExternalLeading;
 	}
 	ReleaseDC(wpData->hwnd, wpData->hdc);
+}
+
+//This takes whole chunks of chars (char*) and appends them to the screen.
+void printToWindowsNew(char* str)
+{
+	// get new length to determine buffer size
+	int newLength = GetWindowTextLength(textHwnd) + lstrlen(str) + 1;
+
+	// create buffer to hold current and new text
+	TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
+
+	if (!newBuffer) return;
+
+	// get existing text from edit control and put into buffer
+	GetWindowText(textHwnd, newBuffer, newLength);
+
+	// append the newText to the buffer
+	_tcscat_s(newBuffer, newLength, str);
+
+	// Set the text in the edit control
+	SetWindowText(textHwnd, newBuffer);
+
+	// free the buffer
+	GlobalFree(newBuffer);
+	
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -252,7 +287,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		case IDM_UPLOADFILE:
 			if (addFile(ofn)) {
 				if (packetizeFile(ofn.lpstrFile) != 1) {
-					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
+					//MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
 					wpData->fileUploaded = true;
 				}
 				//if you want to test check frame function, uncomment the codes below
@@ -265,7 +300,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);
 			}
 
-			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
+			//MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
 
 		case IDM_DISCONNECT:
@@ -274,8 +309,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_HELP:
-			MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
+				MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
 				TEXT("Help"), MB_OK);
+
 			break;
 
 		case IDM_EXIT:
