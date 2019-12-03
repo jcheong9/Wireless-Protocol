@@ -237,11 +237,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 		case IDM_CONNECT:
 
+				sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
 			if (wpData->connected == false) {
 				wpData->connected = true;
 				wpData->hdc = GetDC(wpData->hwnd);
 				if (readThread == NULL) {
-					sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
 					readThread = CreateThread(NULL, 0, ThreadReceiveProc, &wpData, 0, &threadId);
 					setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 					setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_ENABLED);
