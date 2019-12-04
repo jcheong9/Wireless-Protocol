@@ -162,16 +162,35 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 {
-	TextOut(wpData->hdc, *x,  *y,  str, strlen(str));
-	SIZE size;
-	TEXTMETRIC tm;
-	GetTextMetrics(wpData->hdc, &tm);
-	GetTextExtentPoint32(wpData->hdc,  str, strlen(str), &size);
-	*x += size.cx; // increment the screen x-coordinate
-	if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
-		*x = 0;
-		*y = *y + tm.tmHeight + tm.tmExternalLeading;
+	char tempPrint[1025];
+	memset(&tempPrint, 0, sizeof(tempPrint));
+	strcpy(tempPrint, str);
+	tempPrint[1024] = '\0';
+	char tempCopy[2];
+	tempCopy[1] = '\0';
+	for (int i = 0; i < 1024; i++) {
+		tempCopy[0] = tempPrint[i];
+		TextOut(wpData->hdc, *x, *y, tempCopy, strlen(tempCopy));
+		SIZE size;
+		TEXTMETRIC tm;
+		GetTextMetrics(wpData->hdc, &tm);
+		GetTextExtentPoint32(wpData->hdc, tempCopy, strlen(tempCopy), &size);
+		*x += size.cx; // increment the screen x-coordinate
+		if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
+			*x = 0;
+			*y = *y + 30;
+		}
 	}
+	/*TextOut(wpData->hdc, *x,  *y,  tempPrint, strlen(tempPrint));*/
+	//SIZE size;
+	//TEXTMETRIC tm;
+	//GetTextMetrics(wpData->hdc, &tm);
+	//GetTextExtentPoint32(wpData->hdc,  tempCopy, strlen(tempCopy), &size);
+	//*x += size.cx; // increment the screen x-coordinate
+	//if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
+	//	*x = 0;
+	//	*y = *y + 10;
+	//}
 	ReleaseDC(wpData->hwnd, wpData->hdc);
 }
 
