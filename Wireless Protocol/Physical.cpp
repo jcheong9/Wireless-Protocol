@@ -464,6 +464,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						SetEvent(GOOD_FRAME_EVENT);
 						OutputDebugString("Receive frame");
 						wpData->currentSyncByte = buffer[0];
+						printToWindow(wpData->hwnd, wpData->hdc, buffer, &x, &y);
 					}
 				}
 			}
