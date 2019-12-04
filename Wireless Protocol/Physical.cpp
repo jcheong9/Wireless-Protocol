@@ -335,44 +335,53 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 		if (wpData->status == SEND_MODE) {
 			bool failedSending = true;
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
+
 			while (failedSending) {
-				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
-					if (waitACK()) {
-						if (wpData->status == SEND_MODE) {
-							OutputDebugString("Sendmode");
+				if (framePointIndex < dataLink->uploadedFrames.size()) {
+					if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
+						if (waitACK()) {
+							if (wpData->status == SEND_MODE) {
+								OutputDebugString("Sendmode");
+							}
+							else {
+								OutputDebugString("not in sendmode");
+							}
+						
+							failedSending =false;
+							countErrorAck = 0;
 						}
 						else {
-							OutputDebugString("not in sendmode");
-						}
-						
-						failedSending =false;
-						countErrorAck = 0;
-					}
-					else {
-						//resent frame
-						failedSending = true;
-						countErrorAck++;
-						if (countErrorAck == 3) {
-							failedSending = false;
-							errorAck = true;
-							OutputDebugString("B");
-							wpData->status = IDLE;
+							//resent frame
+							failedSending = true;
+							countErrorAck++;
+							if (countErrorAck == 3) {
+								failedSending = false;
+								errorAck = true;
+								OutputDebugString("B");
+								wpData->status = IDLE;
+							}
 						}
 					}
 				}
+				else {
+					framePointIndex = 0;
+					sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
+					wpData->status = IDLE;
+					wpData->fileUploaded = false;
+				}
 			}
 
-			if (framePointIndex < dataLink->uploadedFrames.size() - 1 && errorAck == false) {
+			if (framePointIndex < dataLink->uploadedFrames.size() && errorAck == false) {
 				framePointIndex++;
 			}
-			else if(framePointIndex == dataLink->uploadedFrames.size() - 1 && errorAck == false){
-				framePointIndex = 0; 
-				wpData->fileUploaded = false;
-				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
-				//WaitForSingleObject(eotEvent, 1000);
-				OutputDebugString("A");
-				wpData->status = IDLE;
-			}
+			//else if(framePointIndex == dataLink->uploadedFrames.size() && errorAck == false){
+			//	framePointIndex = 0; 
+			//	wpData->fileUploaded = false;
+			//	sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
+			//	//WaitForSingleObject(eotEvent, 1000);
+			//	OutputDebugString("A");
+			//	wpData->status = IDLE;
+			//}
 		}
 		else if(wpData->status == IDLE && wpData->fileUploaded){	
 			Bid();
