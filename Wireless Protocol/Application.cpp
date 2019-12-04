@@ -193,6 +193,16 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 		*x = 0;
 		*y = *y + tm.tmHeight + tm.tmExternalLeading;
 	}
+	/*TextOut(wpData->hdc, *x,  *y,  tempPrint, strlen(tempPrint));*/
+	//SIZE size;
+	//TEXTMETRIC tm;
+	//GetTextMetrics(wpData->hdc, &tm);
+	//GetTextExtentPoint32(wpData->hdc,  tempCopy, strlen(tempCopy), &size);
+	//*x += size.cx; // increment the screen x-coordinate
+	//if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
+	//	*x = 0;
+	//	*y = *y + 10;
+	//}
 	ReleaseDC(wpData->hwnd, wpData->hdc);
 }
 
