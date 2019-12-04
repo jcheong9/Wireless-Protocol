@@ -63,11 +63,11 @@ int Bid() {
 	char frameENQ[2] = { 0, ENQ };
 
 	if (wpData->fileUploaded) {
-		if (WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1)) {
-			if (WaitForSingleObject(ackEvent, timeoutToReceive) == WAIT_OBJECT_0) {
+		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
+			wpData->sentdEnq = true;
+			if (WaitForSingleObject(ackEvent, 10000) == WAIT_OBJECT_0) {
 				ResetEvent(ackEvent);
-				wpData->sentdEnq = true;
-				OutputDebugString(_T("Received"));
+				OutputDebugString(_T("Setting status to send mode"));
 				wpData->status = SEND_MODE;
 			}
 			//timeout
@@ -331,31 +331,24 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
 
 	while (wpData->connected == true) {
-		if (countErrorAck == 3) {
-			countErrorAck = 0;
-			OutputDebugString(_T("error ack"));
-			wpData->status = IDLE;
-		}
 		if (wpData->status == SEND_MODE) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
-			if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)){
-				if (waitACK() || true) {
-					errorAck = false;
-					countErrorAck = 0;
-					if (checkREQ()) {		//false, receive REQ or REQCounter == 3
-						OutputDebugString(_T("Send EOT, go to IDLE"));
+			bool failedSending = true;
+			while (failedSending) {
+				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
+					if (waitACK()) {
+						failedSending =false;
+						countErrorAck = 0;
 					}
 					else {
-						sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024);
+						//resent frame
+						failedSending = true;
+						countErrorAck++;
+						if (countErrorAck == 3) {
+							failedSending = false;
+							wpData->status = IDLE;
+						}
 					}
-				}
-				else {
-					//resent frame
-					errorAck = true;
-					if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
-						OutputDebugString(_T("Resend Frame"));
-					}
-					countErrorAck++;
 				}
 			}
 			if (framePointIndex < dataLink->uploadedFrames.size() - 1 && !errorAck) {
