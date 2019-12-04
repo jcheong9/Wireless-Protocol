@@ -6,16 +6,20 @@ DataLink* dataLink = new DataLink();
 bool packetizeFile(string filePath) {
 	ifstream file{ filePath };
 	char c;
-	int charIndex = 0;
-	int syncFlag = 0;
-	int frameIndex = -1;
-	char* dataword = nullptr;
+	dataLink->charIndex = 0;
+	dataLink->syncFlag = 0;
+	dataLink->frameIndex = -1;
+	dataLink->dataword = nullptr;
+
+	initialize_frame();
+
+	//filling characters 
 	while (file.get(c)) {
 		//start of the frame & end of dataword
-		if (charIndex % (FRAME_SIZE-5) == 0) {
+		if (dataLink->charIndex % (FRAME_SIZE-5) == 0) {
 			//attach checksum result and EOF to the end of dataword
-			if (frameIndex != -1) {
-				string crc_result = crc(dataword, FRAME_SIZE-5);
+			if (dataLink->frameIndex != -1) {
+				string crc_result = crc(dataLink->dataword, FRAME_SIZE-5);
 				//fill checksum bytes
 				for (int i = 0; i < 8; i+=2) {
 					stringstream str;
@@ -23,44 +27,49 @@ bool packetizeFile(string filePath) {
 					str << temp;
 					unsigned int tempInt;
 					str >> std::hex >> tempInt;
-					dataword[charIndex++] = tempInt;
+					dataLink->dataword[dataLink->charIndex++] = tempInt;
 				}
 				//insert EOF
-				dataword[charIndex] = 0x12;
-				syncFlag == 0? syncFlag = 1: syncFlag = 0;
-				charIndex = 0; //reset char index
+				dataLink->dataword[dataLink->charIndex] = 0x12;
+				dataLink->syncFlag == 0? dataLink->syncFlag = 1: dataLink->syncFlag = 0;
+				dataLink->charIndex = 0; //reset char index
 			}
-			//initialize a frame(char array)
-			dataLink->uploadedFrames.push_back(new char[FRAME_SIZE]());
-			//frame index increment
-			frameIndex++; 
-			//adding SYN and STX//
-			dataword = dataLink->uploadedFrames.at(frameIndex);
-			syncFlag == 0 ? dataword[charIndex++] = 0x05 : dataword[charIndex++] = 0xFF;
-			dataword[charIndex++] = 0x02;
+			initialize_frame();
 		}
-		dataword[charIndex++] = c;
+		dataLink->dataword[dataLink->charIndex++] = c;
 	}
 	//in case that the frame has end of file
 	if (file.eof()) {
-		for (charIndex; charIndex < FRAME_SIZE - 5; charIndex++) {
-			dataword[charIndex] = 0x00;
+		for (dataLink->charIndex; dataLink->charIndex < FRAME_SIZE - 5; dataLink->charIndex++) {
+			
+			dataLink->dataword[dataLink->charIndex] = 0x00;
 		}
-		string crc_result = crc(dataword, FRAME_SIZE - 5);
+		string crc_result = crc(dataLink->dataword, FRAME_SIZE - 5);
 		//fill checksum bytes
 		for (int i = 0; i < 8; i += 2) {
 			stringstream str;
 			string temp = crc_result.substr(i, 2);
 			str << temp;
-			unsigned int tempInt;
+			int tempInt;
 			str >> std::hex >> tempInt;
-			dataword[charIndex++] = tempInt;
+			dataLink->dataword[dataLink->charIndex++] = tempInt;
+			char character = *(dataLink->dataword + dataLink->charIndex-1);
 		}
-		dataword[charIndex] = 0x12;
+		
+		dataLink->dataword[dataLink->charIndex] = 0x12;
 	}
 	return true;
 }
-
+void initialize_frame() {
+	//initialize a frame(char array)
+	dataLink->uploadedFrames.push_back(new char[FRAME_SIZE]());
+	//frame index increment
+	dataLink->frameIndex++;
+	//adding SYN and STX//
+	dataLink->dataword = dataLink->uploadedFrames.at(dataLink->frameIndex);
+	dataLink->syncFlag == 0 ? dataLink->dataword[dataLink->charIndex++] = 0x00 : dataLink->dataword[dataLink->charIndex++] = 0xFF;
+	dataLink->dataword[dataLink->charIndex++] = 0x02;
+}
 
 string crc(char* buffer, streamsize buffer_size) {
 	boost::crc_32_type  result;
