@@ -236,7 +236,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			//printToWindow(wpData->hwnd, wpData->hdc, s, &xC, &yC);
 			break;
 		case IDM_CONNECT:
-
 				sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
 			if (wpData->connected == false) {
 				wpData->connected = true;
@@ -259,7 +258,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				}else {
 					wpData->fileUploaded = true;
 					vector<char*> a = dataLink->uploadedFrames;
-					int b = a.size();
+					char* first_frame = a.at(0);
+					for (first_frame; first_frame < a.at(0) + 1023; first_frame++) {
+						char chracter = *first_frame;
+					}
 				}
 				//if you want to test check frame function, uncomment the codes below
 				//else {
