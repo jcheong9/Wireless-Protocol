@@ -469,7 +469,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 int WaitInput(DWORD secs) {
 	SetCommMask(wpData->hComm, EV_RXCHAR);
 	DWORD dwEvtMask{ 0 };
-	OVERLAPPED ol{};
+	OVERLAPPED ol{ 0 };
 	ol.hEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 	// returns right away if opened overlapped
 	if (!WaitCommEvent(wpData->hComm, &dwEvtMask, &ol))
