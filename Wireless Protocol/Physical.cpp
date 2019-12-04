@@ -202,8 +202,8 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 int waitACK() {
-
-	if (WaitForSingleObject(ackEvent, 1000) == WAIT_OBJECT_0) {
+	OutputDebugString("We are waiting for ACK");
+	 if(WaitForSingleObject(ackEvent, 50000) == WAIT_OBJECT_0) {
 		//reset ack event
 		ResetEvent(ackEvent);
 		return 1;
@@ -333,7 +333,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	while (wpData->connected == true) {
 		if (wpData->status == SEND_MODE) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
-			
 			while (failedSending) {
 				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
 					if (waitACK()) {
@@ -347,6 +346,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						if (countErrorAck == 3) {
 							failedSending = false;
 							errorAck = true;
+							OutputDebugString("B");
 							wpData->status = IDLE;
 						}
 					}
@@ -361,6 +361,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
 				//WaitForSingleObject(eotEvent, 1000);
+				OutputDebugString("A");
 				wpData->status = IDLE;
 			}
 		}
@@ -516,7 +517,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						if (control == wpData->currentSyncByte) {
 							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ) {
 								SetEvent(ackEvent);
-								OutputDebugString("Received an ACK!");
+								OutputDebugString("Received an ACK! in Send Mode");
 								if (control == REQ) {
 									wpData->receivedREQ = true;
 								}
