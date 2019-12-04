@@ -253,38 +253,6 @@ int checkREQ() {
 }
 
 
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: Read
---
--- DATE: September 30, 2019
---
--- REVISIONS: none
---
--- DESIGNER: Tommy Chang
---
--- PROGRAMMER: Tommy Chang
---
--- INTERFACE: Read(HANDLE hComm, char *str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1)
---
---					HANDLE hComm: handle to the port to read from
---					char *str: buffer to store the character
---					DWORD nNumberofBytesToRead: number of bytes to read
---					LPDWORD lpNumberofBytesRead: number of bytes actually read (NULL)
---					LPOVERLAPPED o1: overlapped structure
---
--- RETURNS: int
---
--- NOTES: Reads nNumberofBytestoRead (currently 1 byte, for one character) from the handle, and stores it in the str buffer.
---
-----------------------------------------------------------------------------------------------------------------------*/
-
-int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1) {
-	if (ReadFile(hComm, str, nNumberofBytesToRead, NULL, o1)) {
-		return 1;
-	}
-	return 0;
-}
-
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: ReadFunc
@@ -404,50 +372,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	}
 	return 1;
 }
-
-
-int ReadInput(char* buffer) {
-	DWORD dwRes;
-	DWORD dwRead{ 0 };
-	OVERLAPPED osReader = { 0 };
-	osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	int maxSize = 1024;
-	int bufferSize = 0;
-	char tempBuffer[1];
-	while (bufferSize < maxSize) {
-		if (!ReadFile(wpData->hComm, tempBuffer, 1, &dwRead, &osReader)) {
-			if (GetLastError() != ERROR_IO_PENDING) { // something occured other than waiting for read to complete
-				return 0;
-			}
-			else {
-				dwRes = WaitForSingleObject(osReader.hEvent, 100);  // wait for the read to complete
-			}
-
-			// object signaled
-			if (dwRes == WAIT_OBJECT_0) {	// object was signaled, read completed
-				if (tempBuffer[0] == ACK || tempBuffer[0] == ENQ || tempBuffer[0] == REQ) {
-					buffer[bufferSize] = tempBuffer[0];
-					return 1;
-				}
-				else {
-					buffer[bufferSize] = tempBuffer[0];
-					bufferSize++;
-				}
-			}
-			// object wasnt signaled
-			else {
-				return 0;
-			}
-		}
-		// Read instantly
-		else {
-			buffer[bufferSize] = tempBuffer[0];
-			bufferSize++;
-		}
-	}
-	return 1;
-}
-
 
 
 DWORD WINAPI ThreadReceiveProc(LPVOID n) {
@@ -589,26 +513,6 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	return 1;
 }
 
-
-int WaitInput(DWORD secs) {
-	COMSTAT cs;
-	DWORD dwEvtMask{ 0 };
-	SetCommMask(wpData->hComm, EV_RXCHAR);
-	OVERLAPPED ol;
-	ol.hEvent = CreateEvent(NULL, TRUE, FALSE, 0);
-	if (!WaitCommEvent(wpData->hComm, &dwEvtMask, &ol))
-	{
-		if (GetLastError() == ERROR_IO_PENDING)
-		{
-			if (WaitForSingleObject(ol.hEvent, secs) != WAIT_OBJECT_0)
-				return 0;
-		}
-	}
-	CloseHandle(ol.hEvent);
-	return 1;
-	
-}
-
 int sendAcknowledgment(char control) {
 	OVERLAPPED ol{ 0 };
 	char acknowledge[2];
@@ -630,8 +534,4 @@ int sendAcknowledgment(char control) {
 
 int randomizeTimeOut(int range_min, int range_max){
 	return (double)rand() / (RAND_MAX + 1) * (range_max - range_min) + range_min;
-}
-
-void swapSyncByte() {
-	wpData->currentSyncByte = wpData->currentSyncByte == 0x00 ? 0xFF : 0x00;
 }
