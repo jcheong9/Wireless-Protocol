@@ -383,6 +383,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				frameACK[0] = wpData->currentSyncByte;
 				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
 				sendFrame(wpData->hComm, frameACK, 2);
+				OutputDebugString("sent an ACK from receiving!!");
 				ResetEvent(GOOD_FRAME_EVENT);
 			}
 			else {
@@ -563,7 +564,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						// check the frame
 						// if good, set the event
 						wpData->currentSyncByte = frameBuffer[0];
-						SetEvent(ackEvent);
+						SetEvent(GOOD_FRAME_EVENT);
 						printToWindow(wpData->hwnd, wpData->hdc, frameBuffer, &x, &y);
 					}
 					else {
