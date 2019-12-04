@@ -26,6 +26,7 @@ HANDLE ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE responseWaitEvent = CreateEvent(NULL, TRUE, TRUE, (LPTSTR)_T("ACK"));
 HANDLE ackEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE eotEvent;
+HANDLE GOOD_FRAME_EVENT = CreateEvent(NULL, TRUE, FALSE, 0);
 int REQCounter = 0;
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -176,7 +177,6 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 
 	//running completing asynchronously return false
 	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
-	wpData->currentSyncByte = frame[0];
 	OutputDebugString(_T("Send to port."));
 
 	return 1;
@@ -372,6 +372,17 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 		else if(wpData->status == IDLE && wpData->fileUploaded){	
 			Bid();
 		}
+		else if (wpData->status == RECEIVE_MODE) {
+			if(WaitForSingleObject(GOOD_FRAME_EVENT, 3000) == WAIT_OBJECT_0) {
+				char frameACK[2] = { wpData->currentSyncByte , ACK };
+				sendFrame(wpData->hComm, frameACK, 2);
+				ResetEvent(GOOD_FRAME_EVENT);
+			}
+			else {
+				wpData->status = IDLE;
+			}
+
+		}
 	}
 	return 1;
 }
@@ -433,21 +444,16 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 				control = buffer[0];
 				sendAcknowledgment(control);
 				wpData->status = RECEIVE_MODE;
-				while (wpData->status == RECEIVE_MODE) {
-					if (!WaitInput(3000)) {
-						wpData->status = IDLE;
-					}
-					else {
-						OutputDebugString("Received something");
-						ReadInput(buffer);
-						printToWindow(wpData->hwnd, wpData->hdc, buffer, &x, &y);
-						control = buffer[0];
-						sendAcknowledgment(control);
-					}
-				}
 			}
 			else if (buffer[1] == ACK &&  buffer[0] == wpData->currentSyncByte && wpData->status == SEND_MODE ) {
 				SetEvent(ackEvent);
+			}
+			else if (buffer[1] == STX) {
+				dataLink->incomingFrames[0] = buffer;
+				if (checkFrame()) {
+					SetEvent(GOOD_FRAME_EVENT);
+					wpData->currentSyncByte = buffer[0];
+				}
 			}
 		}
 	}
