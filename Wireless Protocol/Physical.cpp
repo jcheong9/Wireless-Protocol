@@ -346,7 +346,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 							else {
 								OutputDebugString("not in sendmode");
 							}
-						
 							failedSending =false;
 							countErrorAck = 0;
 						}
