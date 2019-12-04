@@ -323,15 +323,10 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	char* framePter;
 	int countErrorAck = 0;
 	bool errorAck = false;
-	//wpData->fileUploaded = false;
 	bool failedSending = true;
-	//WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
-	//sendFrame(wpData->hComm, frameREQ, 1024);
-	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
 	while (wpData->connected == true) {
 		if (wpData->status == SEND_MODE) {
-			//framePter = dataLink->uploadedFrames.at(framePointIndex);
-			while (failedSending) {
+			while (failedSending && wpData->status == SEND_MODE) {
 				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
 					if (waitACK()) {
 						failedSending =false;
@@ -343,7 +338,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						countErrorAck++;
 						if (countErrorAck == 3) {
 							failedSending = false;
-							errorAck = true;
 							OutputDebugString("B");
 							wpData->status = IDLE;
 						}
@@ -351,15 +345,13 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				}
 			}
 
-			if (framePointIndex < dataLink->uploadedFrames.size() - 1 && errorAck == false) {
+			if (framePointIndex < dataLink->uploadedFrames.size() - 1 && wpData->status == SEND_MODE) {
 				framePointIndex++;
 			}
-			else if(framePointIndex == dataLink->uploadedFrames.size() - 1 && errorAck == false){
+			else if(framePointIndex == dataLink->uploadedFrames.size() && errorAck == false && wpData->status == SEND_MODE){
 				framePointIndex = 0; 
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
-				//WaitForSingleObject(eotEvent, 1000);
-				OutputDebugString("A");
 				wpData->status = IDLE;
 			}
 		}
@@ -367,7 +359,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			Bid();
 		}
 		else if (wpData->status == RECEIVE_MODE) {
-			if(WaitForSingleObject(GOOD_FRAME_EVENT, 30000) == WAIT_OBJECT_0) {
+			if(WaitForSingleObject(GOOD_FRAME_EVENT, 3000000) == WAIT_OBJECT_0) {
 				char frameACK[2];
 				frameACK[0] = wpData->currentSyncByte;
 				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
@@ -385,48 +377,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	return 1;
 }
 
-
-int ReadInput(char* buffer) {
-	DWORD dwRes;
-	DWORD dwRead{ 0 };
-	OVERLAPPED osReader = { 0 };
-	osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	int maxSize = 1024;
-	int bufferSize = 0;
-	char tempBuffer[1];
-	while (bufferSize < maxSize) {
-		if (!ReadFile(wpData->hComm, tempBuffer, 1, &dwRead, &osReader)) {
-			if (GetLastError() != ERROR_IO_PENDING) { // something occured other than waiting for read to complete
-				return 0;
-			}
-			else {
-				dwRes = WaitForSingleObject(osReader.hEvent, 100);  // wait for the read to complete
-			}
-
-			// object signaled
-			if (dwRes == WAIT_OBJECT_0) {	// object was signaled, read completed
-				if (tempBuffer[0] == ACK || tempBuffer[0] == ENQ || tempBuffer[0] == REQ) {
-					buffer[bufferSize] = tempBuffer[0];
-					return 1;
-				}
-				else {
-					buffer[bufferSize] = tempBuffer[0];
-					bufferSize++;
-				}
-			}
-			// object wasnt signaled
-			else {
-				return 0;
-			}
-		}
-		// Read instantly
-		else {
-			buffer[bufferSize] = tempBuffer[0];
-			bufferSize++;
-		}
-	}
-	return 1;
-}
 
 
 
@@ -452,103 +402,106 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 			memset(&controlBuffer, 0, sizeof(controlBuffer));
 			memset(&frameBuffer, 0, sizeof(frameBuffer));
 			switch (wpData->status) {
-				case IDLE:
-					if (!ReadFile(wpData->hComm, controlBuffer, 2, &result, &ol)) {
-						if (GetLastError() != ERROR_IO_PENDING) {
-							fRes = FALSE;
-							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
-						}
-						else {
-							if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
-								fRes = FALSE;
-							}
-							else {
-								fRes = TRUE;
-							}
-						}
-					}
-					else {
-						fRes = TRUE;
-					}
-					if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars!");
-						if (controlBuffer[1] == ENQ) {
-							control = controlBuffer[0];
-							sendAcknowledgment(control);
-							wpData->status = RECEIVE_MODE;
-							OutputDebugString("Received ENQ from IDLE state and now I'm receiving");
-						}
-					}
-					else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars!");
-						if (controlBuffer[1] == ACK) {
-							SetEvent(ackEvent);
-							OutputDebugString("Received ACK from IDLE state");
-						}
-					}
-					else {
+			case IDLE:
+				if (!ReadFile(wpData->hComm, controlBuffer, 2, &result, &ol)) {
+					if (GetLastError() != ERROR_IO_PENDING) {
+						fRes = FALSE;
 						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					}
-					break;
-
-				case SEND_MODE:
-					if (!ReadFile(wpData->hComm, controlBuffer, 2, &result, &ol)) {
-						if (GetLastError() != ERROR_IO_PENDING) {
+					else {
+						if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
 							fRes = FALSE;
-							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 						}
 						else {
-							if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
-								fRes = FALSE;
-							}
-							else {
-								fRes = TRUE;
-							}
+							fRes = TRUE;
 						}
 					}
-					else {
-						fRes = TRUE;
-					}
-					if (fRes == TRUE && result == 2) {
-						OutputDebugString("Received 2 chars!");
+				}
+				else {
+					fRes = TRUE;
+				}
+				if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
+					OutputDebugString("Received 2 chars!");
+					if (controlBuffer[1] == ENQ) {
 						control = controlBuffer[0];
-						if (control == wpData->currentSyncByte) {
-							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ) {
-								SetEvent(ackEvent);
-								OutputDebugString("Received an ACK! in Send Mode");
-								if (control == REQ) {
-									wpData->receivedREQ = true;
-								}
-							}
+						sendAcknowledgment(control);
+						wpData->status = RECEIVE_MODE;
+						OutputDebugString("Received ENQ from IDLE state and now I'm receiving");
+					}
+				}
+				else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
+					OutputDebugString("Received 2 chars!");
+					if (controlBuffer[1] == ACK) {
+						SetEvent(ackEvent);
+						OutputDebugString("Received ACK from IDLE state");
+					}
+				}
+				else {
+					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+				}
+				PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+				break;
+
+			case SEND_MODE:
+				if (!ReadFile(wpData->hComm, controlBuffer, 2, &result, &ol)) {
+					if (GetLastError() != ERROR_IO_PENDING) {
+						fRes = FALSE;
+						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+					}
+					else {
+						if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
+							fRes = FALSE;
 						}
 						else {
-							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+							fRes = TRUE;
+						}
+					}
+				}
+				else {
+					fRes = TRUE;
+				}
+				if (fRes == TRUE && result == 2) {
+					OutputDebugString("Received 2 chars!");
+					control = controlBuffer[0];
+					if (control == wpData->currentSyncByte) {
+						if (controlBuffer[1] == ACK || controlBuffer[1] == REQ) {
+							SetEvent(ackEvent);
+							OutputDebugString("Received an ACK! in Send Mode");
+							if (control == REQ) {
+								wpData->receivedREQ = true;
+							}
 						}
 					}
 					else {
 						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					}
-					break;
-				case RECEIVE_MODE:
-					if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {
-						if (GetLastError() != ERROR_IO_PENDING) {
-							fRes = FALSE;
-							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
-						}
-						else {
-							if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
-								fRes = FALSE;
-							}
-							else {
-								fRes = TRUE;
-							}
-						}
+				}
+				else {
+					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+				}
+				PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+				break;
+			case RECEIVE_MODE:
+				if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {
+					if (GetLastError() != ERROR_IO_PENDING) {
+						fRes = FALSE;
+						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					}
 					else {
-						fRes = TRUE;
+						if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
+							fRes = FALSE;
+						}
+						else {
+							fRes = TRUE;
+						}
 					}
-					if (fRes == TRUE && result == 1024) {
-						if (frameBuffer[1] == STX)
+				}
+				else {
+					fRes = TRUE;
+				}
+
+				if (fRes == TRUE && result == 1024) {
+					if (frameBuffer[1] == STX) {
 						OutputDebugString("Received 1024 chars!");
 						// check the frame
 						// if good, set the event
@@ -556,15 +509,23 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						SetEvent(GOOD_FRAME_EVENT);
 						printToWindow(wpData->hwnd, wpData->hdc, frameBuffer, &x, &y);
 					}
+					else if (fRes == FALSE && result == 2) {
+						if (frameBuffer[1] == EOT) {
+							OutputDebugString("Received an EOT!");
+							wpData->status = IDLE;
+						}
+					}
 					else {
 						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					}
 					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					break;
+				}
+
 			}
-				
 		}
 	}
+
 	return 1;
 }
 
