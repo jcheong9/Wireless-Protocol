@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/Admin/source/repos/Wireless-Protocol/Wireless Protocol/boost/safe_numerics/concept
+# Install script for directory: C:/Users/Admin/source/repos/wireless-protocol/Wireless Protocol/boost/safe_numerics/concept
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Users/Admin/Source/Repos/Wireless-Protocol/Wireless Protocol/boost/safe_numerics/out/install/x64-Debug")
+  set(CMAKE_INSTALL_PREFIX "C:/Users/Admin/Source/Repos/wireless-protocol/Wireless Protocol/boost/safe_numerics/out/install/x64-Debug")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

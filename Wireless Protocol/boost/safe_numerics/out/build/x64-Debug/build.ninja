@@ -39,7 +39,7 @@ build safe_numerics: phony
 # Utility command for edit_cache
 
 build CMakeFiles\edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D "C:\Users\Admin\source\repos\Wireless-Protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug" && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D "C:\Users\Admin\source\repos\wireless-protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug" && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 build edit_cache: phony CMakeFiles\edit_cache.util
@@ -48,14 +48,14 @@ build edit_cache: phony CMakeFiles\edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles\rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D "C:\Users\Admin\source\repos\Wireless-Protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug" && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -S"C:\Users\Admin\source\repos\Wireless-Protocol\Wireless Protocol\boost\safe_numerics" -B"C:\Users\Admin\source\repos\Wireless-Protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug""
+  COMMAND = cmd.exe /C "cd /D "C:\Users\Admin\source\repos\wireless-protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug" && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -S"C:\Users\Admin\source\repos\wireless-protocol\Wireless Protocol\boost\safe_numerics" -B"C:\Users\Admin\source\repos\wireless-protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
 build rebuild_cache: phony CMakeFiles\rebuild_cache.util
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# C:/Users/Admin/source/repos/Wireless-Protocol/Wireless Protocol/boost/safe_numerics/CMakeLists.txt
+# C:/Users/Admin/source/repos/wireless-protocol/Wireless Protocol/boost/safe_numerics/CMakeLists.txt
 # =============================================================================
 
 
@@ -63,7 +63,7 @@ build rebuild_cache: phony CMakeFiles\rebuild_cache.util
 # Utility command for edit_cache
 
 build concept\CMakeFiles\edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D "C:\Users\Admin\source\repos\Wireless-Protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug\concept" && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D "C:\Users\Admin\source\repos\wireless-protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug\concept" && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 build concept\edit_cache: phony concept\CMakeFiles\edit_cache.util
@@ -77,7 +77,7 @@ build concept\concepts: phony
 # Utility command for rebuild_cache
 
 build concept\CMakeFiles\rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D "C:\Users\Admin\source\repos\Wireless-Protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug\concept" && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -S"C:\Users\Admin\source\repos\Wireless-Protocol\Wireless Protocol\boost\safe_numerics" -B"C:\Users\Admin\source\repos\Wireless-Protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug""
+  COMMAND = cmd.exe /C "cd /D "C:\Users\Admin\source\repos\wireless-protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug\concept" && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -S"C:\Users\Admin\source\repos\wireless-protocol\Wireless Protocol\boost\safe_numerics" -B"C:\Users\Admin\source\repos\wireless-protocol\Wireless Protocol\boost\safe_numerics\out\build\x64-Debug""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -93,7 +93,7 @@ build concepts: phony concept\concepts
 # =============================================================================
 
 #############################################
-# Folder: C:/Users/Admin/source/repos/Wireless-Protocol/Wireless Protocol/boost/safe_numerics/out/build/x64-Debug/concept
+# Folder: C:/Users/Admin/source/repos/wireless-protocol/Wireless Protocol/boost/safe_numerics/out/build/x64-Debug/concept
 
 build  concept\all: phony
 # =============================================================================

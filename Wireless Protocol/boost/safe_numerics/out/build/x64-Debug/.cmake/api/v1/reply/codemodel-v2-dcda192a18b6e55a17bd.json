@@ -67,8 +67,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/Admin/source/repos/Wireless-Protocol/Wireless Protocol/boost/safe_numerics/out/build/x64-Debug",
-		"source" : "C:/Users/Admin/source/repos/Wireless-Protocol/Wireless Protocol/boost/safe_numerics"
+		"build" : "C:/Users/Admin/source/repos/wireless-protocol/Wireless Protocol/boost/safe_numerics/out/build/x64-Debug",
+		"source" : "C:/Users/Admin/source/repos/wireless-protocol/Wireless Protocol/boost/safe_numerics"
 	},
 	"version" : 
 	{
