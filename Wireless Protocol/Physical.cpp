@@ -66,7 +66,7 @@ int Bid() {
 	if (wpData->fileUploaded) {
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 			wpData->sentdEnq = true;
-			if (WaitForSingleObject(ackEvent, 10000) == WAIT_OBJECT_0) {
+			if (WaitForSingleObject(ackEvent, 1000000) == WAIT_OBJECT_0) {
 				ResetEvent(ackEvent);
 				OutputDebugString(_T("Setting status to send mode"));
 				wpData->status = SEND_MODE;
@@ -176,6 +176,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 
 	//running completing asynchronously return false
 	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
+	wpData->currentSyncByte = frame[0];
 	OutputDebugString(_T("Send to port."));
 
 	return 1;
@@ -204,6 +205,7 @@ int waitACK() {
 	OutputDebugString("We are waiting for ACK");
 	 if(WaitForSingleObject(ackEvent, 50000) == WAIT_OBJECT_0) {
 		//reset ack event
+		 OutputDebugString("Received an ACK after sending a frame!");
 		ResetEvent(ackEvent);
 		return 1;
 	}
@@ -324,16 +326,25 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	int countErrorAck = 0;
 	bool errorAck = false;
 	//wpData->fileUploaded = false;
-	bool failedSending = true;
+	
 	//WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
 	//sendFrame(wpData->hComm, frameREQ, 1024);
 	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
 	while (wpData->connected == true) {
+		
 		if (wpData->status == SEND_MODE) {
+			bool failedSending = true;
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			while (failedSending) {
 				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
 					if (waitACK()) {
+						if (wpData->status == SEND_MODE) {
+							OutputDebugString("Sendmode");
+						}
+						else {
+							OutputDebugString("not in sendmode");
+						}
+						
 						failedSending =false;
 						countErrorAck = 0;
 					}
