@@ -369,11 +369,12 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			Bid();
 		}
 		else if (wpData->status == RECEIVE_MODE) {
-			if(WaitForSingleObject(GOOD_FRAME_EVENT, 30000) == WAIT_OBJECT_0) {
+			if(WaitForSingleObject(GOOD_FRAME_EVENT, 300000) == WAIT_OBJECT_0) {
 				char frameACK[2];
 				frameACK[0] = wpData->currentSyncByte;
 				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
 				sendFrame(wpData->hComm, frameACK, 2);
+				OutputDebugString("Sent an ACK from receiving mode!");
 				ResetEvent(GOOD_FRAME_EVENT);
 			}
 			else {
@@ -473,7 +474,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						fRes = TRUE;
 					}
 					if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars!");
+						OutputDebugString("Received 2 chars in IDLE state!");
 						if (controlBuffer[1] == ENQ) {
 							control = controlBuffer[0];
 							sendAcknowledgment(control);
@@ -482,7 +483,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						}
 					}
 					else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars!");
+						OutputDebugString("Received 2 chars in IDLE state!");
 						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
 							OutputDebugString("Received ACK from IDLE state");
@@ -512,12 +513,12 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						fRes = TRUE;
 					}
 					if (fRes == TRUE && result == 2) {
-						OutputDebugString("Received 2 chars!");
+						OutputDebugString("Received 2 chars in Send state!");
 						control = controlBuffer[0];
 						if (control == wpData->currentSyncByte) {
 							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ) {
 								SetEvent(ackEvent);
-								OutputDebugString("Received an ACK! in Send Mode");
+								OutputDebugString("Received an ACK in Send state!");
 								if (control == REQ) {
 									wpData->receivedREQ = true;
 								}
@@ -551,11 +552,11 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					}
 					if (fRes == TRUE && result == 1024) {
 						if (frameBuffer[1] == STX)
-						OutputDebugString("Received 1024 chars!");
+						OutputDebugString("Received 1024 chars in Receive State!");
 						// check the frame
 						// if good, set the event
 						wpData->currentSyncByte = frameBuffer[0];
-						SetEvent(ackEvent);
+						SetEvent(GOOD_FRAME_EVENT);
 						printToWindow(wpData->hwnd, wpData->hdc, frameBuffer, &x, &y);
 					}
 					else {
