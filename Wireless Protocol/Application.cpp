@@ -255,7 +255,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	ZeroMemory(&ofn, sizeof(ofn));
 	HANDLE readThread = NULL;
 	DWORD threadId;
-	LPCSTR portNumber = (LPCSTR)"COM1";
+	LPCSTR portNumber = (LPCSTR)"COM5";
 
 
 
