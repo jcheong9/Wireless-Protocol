@@ -200,19 +200,27 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 //This takes whole chunks of chars (char*) and appends them to the screen.
 void printToWindowsNew(char* str)
 {
+	char incomingBuffer[1024];
+
+	for (int i = 0; i < 1023; ++i) {
+		incomingBuffer[i] = str[i];
+	}
+	incomingBuffer[1023] = '\0';
 	// get new length to determine buffer size
-	int newLength = GetWindowTextLength(textHwnd) + lstrlen(str) + 2;
+	int newIn = lstrlen(incomingBuffer);
+	int newLength = GetWindowTextLength(textHwnd) + lstrlen(incomingBuffer) + 2;
 	
 	// create buffer to hold current and new text
 	TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
+	int newbuf = lstrlen(newBuffer);
 
 	if (!newBuffer) return;
 
 	// get existing text from edit control and put into buffer
 	GetWindowText(textHwnd, newBuffer, newLength);
-
+	int size = sizeof(newBuffer);
 	// append the newText to the buffer
-	_tcscat_s(newBuffer, newLength, str);
+	_tcscat_s(newBuffer, newLength, incomingBuffer);
 	//newBuffer[newLength - 1] = '\0';
 	int bufleng = sizeof(newBuffer);
 	// Set the text in the edit control

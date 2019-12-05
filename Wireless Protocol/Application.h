@@ -33,7 +33,7 @@ extern Data* wpData;
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);
-void printToWindowsNew(char* str);
+void printToWindowsNew(char str[]);
 BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName);
 void addColumns(HWND hwndLV, LVITEM* lvItem);
 

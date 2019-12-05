@@ -503,7 +503,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 								// if good, set the event
 								wpData->currentSyncByte = frameBuffer[0];
 								SetEvent(GOOD_FRAME_EVENT);
-								int size = strlen(frameBuffer);
+
 								printToWindowsNew(frameBuffer);
 							}
 						}
