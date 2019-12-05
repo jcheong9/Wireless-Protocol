@@ -327,7 +327,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						failedSending =false;
 						countErrorAck = 0;
 						framePointIndex++;
-						checkREQ();
 					}
 					else {
 						//resent frame
