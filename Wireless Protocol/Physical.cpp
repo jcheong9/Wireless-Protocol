@@ -202,9 +202,11 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 ----------------------------------------------------------------------------------------------------------------------*/
 int waitACK() {
 	OutputDebugString("We are waiting for ACK");
-	 if(WaitForSingleObject(ackEvent, 3000) == WAIT_OBJECT_0) {
+	 if(WaitForSingleObject(ackEvent, 5000) == WAIT_OBJECT_0) {
 		//reset ack event
 		ResetEvent(ackEvent);
+
+		OutputDebugString("\n.........Recieved ACK TEST........\n");
 		return 1;
 	}
 	return 0;
@@ -309,14 +311,14 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
 	DWORD CommEvent{ 0 };
 	int framePointIndex = 0;
-	char frameEOT[2] = { 0 , EOT };
+	char frameEOT[2] = { wpData->currentSyncByte , EOT };
 	char frameREQ[2] = { 0 , REQ };
 	int countErrorAck = 0;
 	int vectorSize = dataLink->uploadedFrames.size();
 	bool errorAck = false;
 	bool failedSending = true;
 	while (wpData->connected == true) {
-		if (wpData->status == SEND_MODE) {
+		if (wpData->status == SEND_MODE && wpData->fileUploaded) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			failedSending = true;
 			while (failedSending) {
@@ -324,33 +326,33 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					if (waitACK()) {
 						failedSending =false;
 						countErrorAck = 0;
+						framePointIndex++;
 					}
 					else {
 						//resent frame
 						failedSending = true;
 						countErrorAck++;
-						if (countErrorAck == 3) {
+						OutputDebugString("\n......Resent frame.....\n");
+						if (countErrorAck >= 3) {
 							failedSending = false;
 							errorAck = true;
-							OutputDebugString(_T("\n......Resent frame.....\n"));
-
+							OutputDebugString("\n......Resent frame.....\n");
 							wpData->status = IDLE;
 						}
 					}
 				}
 			}
-
-			if (framePointIndex < dataLink->uploadedFrames.size() - 1 && errorAck == false) {
-				framePointIndex++;
-			}
-			else if(framePointIndex == dataLink->uploadedFrames.size() && errorAck == false){
-				framePointIndex = 0; 
+			if (framePointIndex == dataLink->uploadedFrames.size()) {
+				framePointIndex = 0;
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
 				//WaitForSingleObject(eotEvent, 1000);
 				OutputDebugString(_T("\n......END frame.....\n"));
 				wpData->status = IDLE;
 			}
+			/*if (framePointIndex < dataLink->uploadedFrames.size() -1) {
+			}*/
+
 		}
 		else if(wpData->status == IDLE && wpData->fileUploaded){	
 			Bid();
