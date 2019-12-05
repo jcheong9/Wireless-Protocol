@@ -167,8 +167,8 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 	strcpy(tempPrint, str);
 	tempPrint[1024] = '\0';
 	char tempCopy[2];
-	tempCopy[1] = '\0';
-	for (int i = 0; i < 1024; i++) {
+	memset(&tempCopy, 0, sizeof(tempCopy));
+	for (int i = 0; i < 1023; i++) {
 		tempCopy[0] = tempPrint[i];
 		TextOut(wpData->hdc, *x, *y, tempCopy, strlen(tempCopy));
 		SIZE size;
