@@ -471,7 +471,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					if (fRes == TRUE && result == 2) {
 						OutputDebugString("Received 2 chars in Send state!");
 						control = controlBuffer[0];
-							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ) {
+							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ && control == wpData->currentSyncByte) {
 								SetEvent(ackEvent);
 								OutputDebugString("Received an ACK in Send state!");
 								if (control == REQ) {
@@ -505,13 +505,18 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						fRes = TRUE;
 					}
 					if (fRes == TRUE && result == 1024) {
-						if (frameBuffer[1] == STX)
-						OutputDebugString("Received 1024 chars in Receive State!");
-						// check the frame
-						// if good, set the event
-						wpData->currentSyncByte = frameBuffer[0];
-						SetEvent(GOOD_FRAME_EVENT);
-						printToWindowsNew(frameBuffer);
+						if (frameBuffer[1] == STX) {
+							dataLink->incomingFrames.push_back(frameBuffer);
+							if (checkFrame()) {
+								OutputDebugString("Received 1024 chars in Receive State!");
+								// check the frame
+								// if good, set the event
+								wpData->currentSyncByte = frameBuffer[0];
+								SetEvent(GOOD_FRAME_EVENT);
+								int size = strlen(frameBuffer);
+								printToWindowsNew(frameBuffer);
+							}
+						}
 					}
 					else {
 						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
