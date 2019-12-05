@@ -342,7 +342,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						if (countErrorAck >= 3) {
 							failedSending = false;
 							errorAck = true;
-							OutputDebugString("\n......Resent frame.....\n");
+							OutputDebugString("\n......Goes to IDLE when 3 errors.....\n");
 							wpData->status = IDLE;
 						}
 					}
@@ -410,11 +410,12 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	char frameBuffer[1024];
 	SetCommMask(wpData->hComm, EV_RXCHAR);
 	while (wpData->connected == true) {
+		memset(&frameBuffer, 0, sizeof(frameBuffer));
+		memset(&controlBuffer, 0, sizeof(controlBuffer));
 		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
 			fRes = FALSE;
 			result = -1;
 			
-			memset(&controlBuffer, 0, sizeof(controlBuffer));
 			int sizeofstuff = sizeof(frameBuffer);
 			switch (wpData->status) {
 				case IDLE:
@@ -559,15 +560,22 @@ int sendAcknowledgment(char control) {
 	char acknowledge[2];
 	acknowledge[0] = control;
 	if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == false) {
+		OutputDebugString("Received mode ACK");
+
 		acknowledge[1] = ACK;
 	}
 	else if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == true) {
 		acknowledge[1] = REQ;
+		OutputDebugString("Received mode REQ");
+
 	}
 	else if (wpData->status == IDLE) {
 		acknowledge[1] = ACK;
+		OutputDebugString("IDLE mode ACK");
+
 	}
 	WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol);
+	OutputDebugString("sent ACK or REQ");
 	return 0;
 }
 
