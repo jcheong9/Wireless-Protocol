@@ -66,7 +66,7 @@ int Bid() {
 	if (wpData->fileUploaded) {
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 			wpData->sentdEnq = true;
-			if (WaitForSingleObject(ackEvent, 10000) == WAIT_OBJECT_0) {
+			if (WaitForSingleObject(ackEvent, 5000) == WAIT_OBJECT_0) {
 				ResetEvent(ackEvent);
 				OutputDebugString(_T("Setting status to send mode"));
 				wpData->status = SEND_MODE;
@@ -202,7 +202,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 ----------------------------------------------------------------------------------------------------------------------*/
 int waitACK() {
 	OutputDebugString("We are waiting for ACK");
-	 if(WaitForSingleObject(ackEvent, 50000) == WAIT_OBJECT_0) {
+	 if(WaitForSingleObject(ackEvent, 3000) == WAIT_OBJECT_0) {
 		//reset ack event
 		ResetEvent(ackEvent);
 		return 1;
@@ -307,30 +307,15 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 
 DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
-	char str[2];
-	str[1] = '\0';
 	DWORD CommEvent{ 0 };
-
 	int framePointIndex = 0;
-	OutputDebugString(_T("Start Thread SEND"));
-	//test frames
-	//char frame[1024] = { 'J', 'H', 'e', 'l', 'l', 'o' };
-	//char* frame211 = dataLink->uploadedFrames[0];
 	char frameEOT[2] = { 0 , EOT };
 	char frameREQ[2] = { 0 , REQ };
-	//int size = sizeof(frame);
-	//test send
-	char* framePter;
 	int countErrorAck = 0;
 	bool errorAck = false;
-	//wpData->fileUploaded = false;
 	bool failedSending = true;
-	//WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
-	//sendFrame(wpData->hComm, frameREQ, 1024);
-	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
 	while (wpData->connected == true) {
 		if (wpData->status == SEND_MODE) {
-			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			while (failedSending) {
 				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
 					if (waitACK()) {
@@ -344,7 +329,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						if (countErrorAck == 3) {
 							failedSending = false;
 							errorAck = true;
-							OutputDebugString("B");
 							wpData->status = IDLE;
 						}
 					}
@@ -354,12 +338,10 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			if (framePointIndex < dataLink->uploadedFrames.size() - 1 && errorAck == false) {
 				framePointIndex++;
 			}
-			else if(framePointIndex == dataLink->uploadedFrames.size() - 1 && errorAck == false){
+			else if(framePointIndex == dataLink->uploadedFrames.size() && errorAck == false){
 				framePointIndex = 0; 
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
-				//WaitForSingleObject(eotEvent, 1000);
-				OutputDebugString("A");
 				wpData->status = IDLE;
 			}
 		}
@@ -367,7 +349,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			Bid();
 		}
 		else if (wpData->status == RECEIVE_MODE) {
-			if(WaitForSingleObject(GOOD_FRAME_EVENT, 300000) == WAIT_OBJECT_0) {
+			if(WaitForSingleObject(GOOD_FRAME_EVENT, 3000) == WAIT_OBJECT_0) {
 				char frameACK[2];
 				frameACK[0] = wpData->currentSyncByte;
 				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
@@ -546,9 +528,7 @@ int sendAcknowledgment(char control) {
 	else if (wpData->status == IDLE) {
 		acknowledge[1] = ACK;
 	}
-	if (!WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol)) {
-		OutputDebugString("Failed to send acknowledgment");
-	}
+	WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol);
 	return 0;
 }
 
