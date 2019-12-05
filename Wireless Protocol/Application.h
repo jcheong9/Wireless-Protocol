@@ -26,7 +26,7 @@ struct Data {
 
 	HWND labels;
 };
-extern Data * wpData;
+extern Data* wpData;
 
 
 
