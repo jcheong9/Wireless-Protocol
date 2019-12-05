@@ -208,7 +208,7 @@ void printToWindowsNew(char* str)
 	incomingBuffer[1023] = '\0';
 	// get new length to determine buffer size
 	int newIn = lstrlen(incomingBuffer);
-	int newLength = GetWindowTextLength(textHwnd) + lstrlen(incomingBuffer) + 2;
+	int newLength = GetWindowTextLength(textHwndRx) + lstrlen(incomingBuffer) + 2;
 	
 	// create buffer to hold current and new text
 	TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
@@ -217,14 +217,14 @@ void printToWindowsNew(char* str)
 	if (!newBuffer) return;
 
 	// get existing text from edit control and put into buffer
-	GetWindowText(textHwnd, newBuffer, newLength);
+	GetWindowText(textHwndRx, newBuffer, newLength);
 	int size = sizeof(newBuffer);
 	// append the newText to the buffer
 	_tcscat_s(newBuffer, newLength, incomingBuffer);
 	//newBuffer[newLength - 1] = '\0';
 	int bufleng = sizeof(newBuffer);
 	// Set the text in the edit control
-	SetWindowText(textHwnd, newBuffer);
+	SetWindowText(textHwndRx, newBuffer);
 
 	// free the buffer
 	GlobalFree(newBuffer);
