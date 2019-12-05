@@ -23,7 +23,7 @@ struct Data {
 	int status = COMMAND_MODE;
 	bool sentdEnq;
 	char currentSyncByte = 0;
-
+	int framePointIndex = 0;
 	HWND labels;
 };
 extern Data* wpData;
