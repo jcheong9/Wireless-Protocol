@@ -62,7 +62,7 @@ int Bid() {
 	char frameENQ[2];
 	frameENQ[0] = 0x00;
 	frameENQ[1] = ENQ;
-
+	OutputDebugString(_T("/n......Bidding.....\n"));
 	if (wpData->fileUploaded) {
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 			wpData->sentdEnq = true;
@@ -511,7 +511,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						// if good, set the event
 						wpData->currentSyncByte = frameBuffer[0];
 						SetEvent(GOOD_FRAME_EVENT);
-						printToWindow(wpData->hwnd, wpData->hdc, frameBuffer, &x, &y);
+						printToWindowsNew(frameBuffer);
 					}
 					else {
 						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
