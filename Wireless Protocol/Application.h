@@ -2,6 +2,7 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 #include <windows.h>
+#include <CommCtrl.h>
 #include "DumbMenu.h"
 #include "Session.h"
 //#include "Physical.h"
@@ -27,10 +28,16 @@ struct Data {
 };
 extern Data * wpData;
 
+
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);
 void printToWindowsNew(char* str);
+BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName);
+void addColumns(HWND hwndLV, LVITEM* lvItem);
+
+void prepWindow(HINSTANCE hInst);
 
 
 
