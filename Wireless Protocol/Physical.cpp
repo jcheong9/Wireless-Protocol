@@ -236,7 +236,7 @@ int waitACK() {
 ----------------------------------------------------------------------------------------------------------------------*/
 //return 0 no REQ or REQCounter < 3
 int checkREQ() {
-	char frameEOT[2] = { 255, EOT };
+	char frameEOT[2] = { 0x00, EOT };
 	if (wpData->receivedREQ == TRUE && REQCounter < 3) {
 		REQCounter++;
 		if (REQCounter == 3) {
@@ -315,7 +315,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
 	DWORD CommEvent{ 0 };
 	int framePointIndexlocal = wpData->framePointIndex;
-	char frameEOT[2] = { wpData->currentSyncByte , EOT };
+	char frameEOT[2] = { 0x00 , EOT };
 	char frameREQ[2] = { 0 , REQ };
 	int countErrorAck = 0;
 	int vectorSize = dataLink->uploadedFrames.size();
@@ -348,11 +348,12 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					}
 				}
 			}
+			PurgeComm(wpData->hComm,PURGE_TXCLEAR);
 			if (framePointIndexlocal == dataLink->uploadedFrames.size()) {
 				framePointIndexlocal = 0;
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
-				WaitForSingleObject(eotEvent, 2000);
+				WaitForSingleObject(eotEvent, 3000);
 				OutputDebugString(_T("\n......END frame.....\n"));
 				wpData->status = IDLE;
 			}
@@ -509,15 +510,22 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						}
 					}
 					else {
+						if (frameBuffer[1] == EOT) {
+							wpData->status = IDLE;
+							OutputDebugString("received EOT, going back to IDLE from receieve");
+							break;
+						}
 						fRes = TRUE;
 					}
 					//if (fRes == FALSE && result == 2) {
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
 							OutputDebugString("received EOT, going back to IDLE from receieve");
+							break;
 						}
 					//}
 					else if (fRes == TRUE && result == 1024) {
+
 						if (frameBuffer[1] == STX) {
 							dataLink->incomingFrames.push_back(frameBuffer);
 							if (checkFrame()) {
