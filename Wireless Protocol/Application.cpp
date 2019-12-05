@@ -1,30 +1,7 @@
 
 #include "Application.h"
-#include <stdio.h>
+
 #pragma warning (disable: 4096)
-
-static HWND hList = NULL;  // List View identifier
-LVCOLUMN LvCol;
-LVITEM LvItem;
-char Temp[255] = "";
-
-//columns for send and receive
-LVCOLUMN lcl;
-LVCOLUMN rcl;
-
-//column counter 
-static int col = 0;
-
-//Textbox handlers for send and receive
-HWND textHwnd;
-HWND textHwndRx;
-
-//Handlers for the tables for send and receive
-HWND hWndListView;
-HWND hWndListViewRx;
-char* buff;
-char* buffNewText;
-char* newBuffer;
 
 /*------------------------------------------------------------------------------------------------------------------
 -- SOURCE FILE: Application.c - An application that will act as a dumb terminal
@@ -37,7 +14,7 @@ char* newBuffer;
 --				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 --				LPSTR lspszCmdParam, int nCmdShow)
 --				void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
---				void `ToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
+--				void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 --
 -- DATE: September 30, 2019
 --
@@ -85,8 +62,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 {
 	wpData->currentSyncByte = 0x00;
 	wpData->connected = false;
-	OutputDebugString(_T("/n....IDLE Set from win main.../n"));
-	wpData->status = COMMAND_MODE;
+	wpData->status = IDLE;
 	wpData->hComm = NULL;
 	wpData->sentdEnq = false;
 	wpData->fileUploaded = false;
@@ -111,16 +87,19 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	if (!RegisterClassEx(&Wcl))
 		return 0;
 
-	//Creates and centers the window
-	wpData->hwnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, (GetSystemMetrics(0) / 2 - 609), (GetSystemMetrics(1) / 2 - 425),
-		1218, 850, NULL, NULL, hInst, NULL);
+	wpData->hwnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, (GetSystemMetrics(0) / 2 - 500), (GetSystemMetrics(1) / 2 - 400),
+		1000, 800, NULL, NULL, hInst, NULL);
 	setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 	setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 	
-	prepWindow(hInst);
+	//This is here to test a text box 
+	//HWND hWndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Edit"), TEXT("test"),
+	//	WS_CHILD | WS_VISIBLE , 0, 0, 1000, 800, wpData->hwnd, NULL, NULL, NULL);
+
 
 	ShowWindow(wpData->hwnd, nCmdShow);
 	UpdateWindow(wpData->hwnd);
+
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
 		TranslateMessage(&Msg);
@@ -183,16 +162,24 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 {
-
-	TextOut(wpData->hdc, *x,  *y,  str, strlen(str));
-	SIZE size;
-	TEXTMETRIC tm;
-	GetTextMetrics(wpData->hdc, &tm);
-	GetTextExtentPoint32(wpData->hdc,  str, strlen(str), &size);
-	*x += size.cx; // increment the screen x-coordinate
-	if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
-		*x = 0;
-		*y = *y + tm.tmHeight + tm.tmExternalLeading;
+	char tempPrint[1025];
+	memset(&tempPrint, 0, sizeof(tempPrint));
+	strcpy(tempPrint, str);
+	tempPrint[1024] = '\0';
+	char tempCopy[2];
+	memset(&tempCopy, 0, sizeof(tempCopy));
+	for (int i = 0; i < 1023; i++) {
+		tempCopy[0] = tempPrint[i];
+		TextOut(wpData->hdc, *x, *y, tempCopy, strlen(tempCopy));
+		SIZE size;
+		TEXTMETRIC tm;
+		GetTextMetrics(wpData->hdc, &tm);
+		GetTextExtentPoint32(wpData->hdc, tempCopy, strlen(tempCopy), &size);
+		*x += size.cx; // increment the screen x-coordinate
+		if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
+			*x = 0;
+			*y = *y + 30;
+		}
 	}
 	/*TextOut(wpData->hdc, *x,  *y,  tempPrint, strlen(tempPrint));*/
 	//SIZE size;
@@ -205,31 +192,6 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 	//	*y = *y + 10;
 	//}
 	ReleaseDC(wpData->hwnd, wpData->hdc);
-}
-
-//This takes whole chunks of chars (char*) and appends them to the screen.
-void printToWindowsNew(char* str)
-{
-	// get new length to determine buffer size
-	int newLength = GetWindowTextLength(textHwnd) + lstrlen(str) + 1;
-
-	// create buffer to hold current and new text
-	TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
-
-	if (!newBuffer) return;
-
-	// get existing text from edit control and put into buffer
-	GetWindowText(textHwnd, newBuffer, newLength);
-
-	// append the newText to the buffer
-	_tcscat_s(newBuffer, newLength, str);
-
-	// Set the text in the edit control
-	SetWindowText(textHwnd, newBuffer);
-
-	// free the buffer
-	GlobalFree(newBuffer);
-	
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -296,7 +258,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 			if (wpData->connected == false) {
 				wpData->connected = true;
-				wpData->status = IDLE;
 				wpData->hdc = GetDC(wpData->hwnd);
 				if (readThread == NULL) {
 					sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
@@ -329,20 +290,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);
 			}
 
-			//MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
+			MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
 
 		case IDM_DISCONNECT:
 			wpData->connected = false;
+			wpData->fileUploaded = false;
 			wpData->status = COMMAND_MODE;
 			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED );
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 			break;
 
 		case IDM_HELP:
-				//MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
-				//TEXT("Help"), MB_OK);
-				printToWindowsNew((char*)"Two before narrow not relied how except moment myself. Dejection assurance mrs led certainly. So gate at no only none open. Betrayed at properly it of graceful on. Dinner abroad am depart ye turned hearts as me wished. Therefore allowance too perfectly gentleman supposing man his now. Families goodness all eat out bed steepest servants. Explained the incommode sir improving northward immediate eat. Man denoting received you sex possible you. Shew park own loud son door less yet.");
+			MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
+				TEXT("Help"), MB_OK);
 			break;
 
 		case IDM_EXIT:
@@ -385,139 +346,4 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hwnd, Message, wParam, lParam);
 	}
 	return 0;
-}
-
-BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName)
-{
-	char szText[256];     // Temporary buffer.
-	LVCOLUMN lvc;
-	int iCol = col;
-
-	// Initialize the LVCOLUMN structure.
-	// The mask specifies that the format, width, text,
-	// and subitem members of the structure are valid.
-	lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-
-
-	lvc.iSubItem = col;
-	lvc.pszText = (LPSTR) colName;
-	lvc.cx = 150;               // Width of column in pixels.
-	lvc.fmt = LVCFMT_LEFT;  // center-aligned column.
-
-
-	// Load the names of the column headings from the string resources.
-	LoadString(hInst,
-		UINT (colName + iCol),
-		szText,
-		sizeof(szText) / sizeof(szText[0]));
-
-	// Insert the columns into the list view.
-	if (ListView_InsertColumn(hWndListView, iCol, &lvc) == -1)
-		return FALSE;
-
-	if (col == 1)
-		col = 0;
-	else 
-		col++; 
-
-	return TRUE;
-}
-
-void addColumns(HWND hwndLV, LVITEM* lvItem) {
-	LVITEM lvI;
-
-	// Initialize LVITEM members that are common to all items.
-	lvI.pszText = LPSTR_TEXTCALLBACK; // Sends an LVN_GETDISPINFO message.
-	lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
-	lvI.stateMask = 0;
-	lvI.iSubItem = 0;
-	lvI.state = 0;
-
-	// Initialize LVITEM members that are different for each item.
-	for (int index = 0; index < 3; index++)
-	{
-		lvI.iItem = index;
-		lvI.iImage = index;
-
-		// Insert items into the list.
-		ListView_InsertItem(hwndLV, &lvI);
-	}
-
-	lvItem = &lvI;
-}
-
-void prepWindow(HINSTANCE hInst) {
-	/*
-	Send section
-	*/
-	textHwnd = CreateWindow("EDIT", "Send",
-		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_MULTILINE | WS_VSCROLL | ES_READONLY,
-		0, 0, 900, 390, wpData->hwnd, NULL, hInst, NULL);
-
-	//Send stats table
-	hWndListView = CreateWindow(WC_LISTVIEW, (LPCSTR)L"", WS_CHILD | LVS_REPORT | LVS_EDITLABELS | WS_VISIBLE,
-		900, 0, 300, 200, wpData->hwnd, NULL, hInst, NULL);
-
-	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Criteria");
-
-	LVITEM* lv = new LVITEM();
-	addColumns(hWndListView, lv);
-
-	ListView_SetItemText(hWndListView, 0, 0, (LPSTR)"Number of Frames");
-	ListView_SetItemText(hWndListView, 1, 0, (LPSTR)"Number of ACKs");
-	ListView_SetItemText(hWndListView, 2, 0, (LPSTR)"Number of REQs");
-
-	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Statistics");
-
-
-	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)"0");
-	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)"0");
-	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)"0");
-
-	/*
-	Receive section
-	*/
-	textHwndRx = CreateWindow("EDIT", "Receive",
-		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_MULTILINE | WS_VSCROLL | ES_READONLY,
-		0, 400, 900, 390, wpData->hwnd, NULL, hInst, NULL);
-
-	//Receive stats table
-	hWndListViewRx = CreateWindow(WC_LISTVIEW, (LPCSTR)L"", WS_CHILD | LVS_REPORT | LVS_EDITLABELS | WS_VISIBLE,
-		900, 400, 300, 200, wpData->hwnd, NULL, hInst, NULL);
-
-	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Criteria");
-
-	addColumns(hWndListViewRx, lv);
-	ListView_SetItemText(hWndListViewRx, 0, 0, (LPSTR)"Number of Frames");
-	ListView_SetItemText(hWndListViewRx, 1, 0, (LPSTR)"Number of ACKs");
-	ListView_SetItemText(hWndListViewRx, 2, 0, (LPSTR)"Number of REQs");
-
-	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Statistics");
-	ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)"0");
-	ListView_SetItemText(hWndListViewRx, 1, 1, (LPSTR)"0");
-	ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)"0");
-}
-
-void updateStats(unsigned long newValue, int rowPosition) {
-	switch (rowPosition) {
-	case (10):
-		ListView_SetItemText(hWndListView, 0, 1, (LPSTR)newValue);
-		break;
-	case (11):
-		ListView_SetItemText(hWndListView, 1, 1, (LPSTR)newValue);
-
-		break;
-	case (12):
-		ListView_SetItemText(hWndListView, 2, 1, (LPSTR)newValue);
-		break;
-	case (20):
-		ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)newValue);
-		break;
-	case (21):
-		ListView_SetItemText(hWndListViewRx, 1, 1, (LPSTR)newValue);
-		break;
-	case (22):
-		ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)newValue);
-		break;
-	}
 }
