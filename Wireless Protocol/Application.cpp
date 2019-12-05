@@ -8,14 +8,18 @@ LVCOLUMN LvCol;
 LVITEM LvItem;
 char Temp[255] = "";
 
+//columns for send and receive
 LVCOLUMN lcl;
 LVCOLUMN rcl;
 
+//column counter 
 static int col = 0;
 
+//Textbox handlers for send and receive
 HWND textHwnd;
 HWND textHwndRx;
 
+//Handlers for the tables for send and receive
 HWND hWndListView;
 HWND hWndListViewRx;
 char* buff;
@@ -106,7 +110,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	if (!RegisterClassEx(&Wcl))
 		return 0;
 
-	wpData->hwnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, (GetSystemMetrics(0) / 2 - 500), (GetSystemMetrics(1) / 2 - 425),
+	//Creates and centers the window
+	wpData->hwnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, (GetSystemMetrics(0) / 2 - 609), (GetSystemMetrics(1) / 2 - 425),
 		1218, 850, NULL, NULL, hInst, NULL);
 	setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 	setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
@@ -450,7 +455,7 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListView, 1, 0, (LPSTR)"Number of ACKs");
 	ListView_SetItemText(hWndListView, 2, 0, (LPSTR)"Number of REQs");
 
-	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Stattistics");
+	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Statistics");
 
 
 	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)"0");
