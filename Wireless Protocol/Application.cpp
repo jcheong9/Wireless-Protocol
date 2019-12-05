@@ -37,7 +37,7 @@ char* newBuffer;
 --				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 --				LPSTR lspszCmdParam, int nCmdShow)
 --				void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
---				void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
+--				void `ToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 --
 -- DATE: September 30, 2019
 --
@@ -85,7 +85,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 {
 	wpData->currentSyncByte = 0x00;
 	wpData->connected = false;
-	wpData->status = IDLE;
+	OutputDebugString(_T("/n....IDLE Set from win main.../n"));
+	wpData->status = COMMAND_MODE;
 	wpData->hComm = NULL;
 	wpData->sentdEnq = false;
 	wpData->fileUploaded = false;
@@ -285,6 +286,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 			if (wpData->connected == false) {
 				wpData->connected = true;
+				wpData->status = IDLE;
 				wpData->hdc = GetDC(wpData->hwnd);
 				if (readThread == NULL) {
 					sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
@@ -323,6 +325,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_DISCONNECT:
 			wpData->connected = false;
+			wpData->fileUploaded = false;
 			wpData->status = COMMAND_MODE;
 			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED);
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
