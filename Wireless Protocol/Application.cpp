@@ -201,8 +201,8 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 void printToWindowsNew(char* str)
 {
 	// get new length to determine buffer size
-	int newLength = GetWindowTextLength(textHwnd) + lstrlen(str) + 1;
-
+	int newLength = GetWindowTextLength(textHwnd) + lstrlen(str) + 2;
+	
 	// create buffer to hold current and new text
 	TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
 
@@ -213,7 +213,8 @@ void printToWindowsNew(char* str)
 
 	// append the newText to the buffer
 	_tcscat_s(newBuffer, newLength, str);
-
+	//newBuffer[newLength - 1] = '\0';
+	int bufleng = sizeof(newBuffer);
 	// Set the text in the edit control
 	SetWindowText(textHwnd, newBuffer);
 
