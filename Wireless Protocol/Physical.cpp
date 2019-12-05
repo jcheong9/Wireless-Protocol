@@ -314,7 +314,6 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
 	DWORD CommEvent{ 0 };
-	int framePointIndexlocal = wpData->framePointIndex;
 	char frameEOT[2] = { wpData->currentSyncByte , EOT };
 	char frameREQ[2] = { 0 , REQ };
 	int countErrorAck = 0;
@@ -327,11 +326,11 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			failedSending = true;
 			while (failedSending) {
-				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndexlocal], 1024)) {
+				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[wpData->framePointIndex], 1024)) {
 					if (waitACK()) {
 						failedSending =false;
 						countErrorAck = 0;
-						framePointIndexlocal++;
+						wpData->framePointIndex++;
 						checkREQ();
 					}
 					else {
@@ -348,8 +347,8 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					}
 				}
 			}
-			if (framePointIndexlocal == dataLink->uploadedFrames.size()) {
-				framePointIndexlocal = 0;
+			if (wpData->framePointIndex == dataLink->uploadedFrames.size()) {
+				wpData->framePointIndex = 0;
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
 				WaitForSingleObject(eotEvent, 2000);
@@ -371,16 +370,17 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 
 				sendFrame(wpData->hComm, frameACK, 2);
 				if (frameACK[1] == REQ) {
-					OutputDebugString("Sent an REQ from receiving mode!");
+					OutputDebugString("\n....Sent an REQ from receiving mode!...\n");
 				}
 				else {
-					OutputDebugString("Sent an ACK from receiving mode!");
+					OutputDebugString("\n....Sent an ACK from receiving mode!...\n");
 				}
 				ResetEvent(GOOD_FRAME_EVENT);
 			}
 			else {
 				OutputDebugString("Timeoout!");
 				wpData->status = IDLE;
+
 			}
 
 		}
@@ -403,7 +403,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	OVERLAPPED ol{ 0 };
 	ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (ol.hEvent == NULL) {
-		OutputDebugString("Couldn't create the event");
+		OutputDebugString("\n.....Couldn't create the event.....\n");
 	}
 	char controlBuffer[2];
 	char frameBuffer[1024];
@@ -435,22 +435,22 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						fRes = TRUE;
 					}
 					if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars in IDLE state!");
+						OutputDebugString("\n.....Received 2 chars in IDLE state! sentEnq false.....\n");
 						if (controlBuffer[1] == ENQ) {
 							control = controlBuffer[0];
 							sendAcknowledgment(control);
 							wpData->status = RECEIVE_MODE;
 							SetEvent(enqEvent);
-							OutputDebugString("Received ENQ from IDLE state and now I'm receiving");
+							OutputDebugString("\n.....Received ENQ from IDLE state and now I'm receiving.....\n");
 						}
 					}
 					else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars in IDLE state!");
+						OutputDebugString("\n.....Received 2 chars in IDLE state!.....\n");
 						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
 							SetEvent(enqEvent);
-							OutputDebugString("Received ACK from IDLE state");
+							OutputDebugString("\n.....Received ACK from IDLE state.....\n");
 						}
 					}
 					else {
@@ -477,11 +477,11 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						fRes = TRUE;
 					}
 					if (fRes == TRUE && result == 2) {
-						OutputDebugString("Received 2 chars in Send state!");
+						OutputDebugString("\n ......Received 2 chars in Send state!....\n");
 						control = controlBuffer[0];
 							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ && control == wpData->currentSyncByte) {
 								SetEvent(ackEvent);
-								OutputDebugString("Received an ACK in Send state!");
+								OutputDebugString("\n Received an ACK in Send state!.....\n");
 								if (control == REQ) {
 									wpData->receivedREQ = true;
 								}
@@ -515,14 +515,14 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					//if (fRes == FALSE && result == 2) {
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
-							OutputDebugString("received EOT, going back to IDLE from receieve");
+							OutputDebugString("\n received EOT, going back to IDLE from receieve");
 						}
 					//}
 					else if (fRes == TRUE && result == 1024) {
 						if (frameBuffer[1] == STX) {
 							dataLink->incomingFrames.push_back(frameBuffer);
 							if (checkFrame()) {
-								OutputDebugString("Received 1024 chars in Receive State!");
+								OutputDebugString("\n Received 1024 chars in Receive State!");
 								// check the frame
 								// if good, set the event
 								wpData->currentSyncByte = frameBuffer[0];
