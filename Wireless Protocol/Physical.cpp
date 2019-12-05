@@ -25,6 +25,7 @@
 HANDLE ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE responseWaitEvent = CreateEvent(NULL, TRUE, TRUE, (LPTSTR)_T("ACK"));
 HANDLE ackEvent = CreateEvent(NULL, TRUE, FALSE, 0);
+HANDLE enqEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE eotEvent;
 HANDLE GOOD_FRAME_EVENT = CreateEvent(NULL, TRUE, FALSE, 0);
 int REQCounter = 0;
@@ -66,7 +67,7 @@ int Bid() {
 	if (wpData->fileUploaded) {
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 			wpData->sentdEnq = true;
-			if (WaitForSingleObject(ackEvent, 5000) == WAIT_OBJECT_0) {
+			if (WaitForSingleObject(ackEvent, 4000) == WAIT_OBJECT_0) {
 				ResetEvent(ackEvent);
 				OutputDebugString(_T("Setting status to send mode"));
 				wpData->status = SEND_MODE;
@@ -74,11 +75,14 @@ int Bid() {
 			//timeout
 			else {
 				wpData->sentdEnq = false;
-				randomizedTO = randomizeTimeOut(500, 1000);
+				randomizedTO = randomizeTimeOut(500, 3000);
 				OutputDebugString(_T("Timeout2"));
-				WaitForSingleObject(dummy, randomizedTO) == WAIT_OBJECT_0;
+				WaitForSingleObject(enqEvent, randomizedTO);
+				ResetEvent(enqEvent);
+
 			}
 		}
+	wpData->sentdEnq = false;
 	return 1;
 }
 
@@ -244,7 +248,7 @@ int checkREQ() {
 			}
 			WaitForSingleObject(eotEvent, 1000);
 			wpData->status = IDLE;
-			
+			wpData->receivedREQ = false;
 			return 1;
 		}
 
@@ -347,7 +351,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				framePointIndex = 0;
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
-				//WaitForSingleObject(eotEvent, 1000);
+				WaitForSingleObject(eotEvent, 2000);
 				OutputDebugString(_T("\n......END frame.....\n"));
 				wpData->status = IDLE;
 			}
@@ -364,7 +368,12 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				frameACK[0] = wpData->currentSyncByte;
 				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
 				sendFrame(wpData->hComm, frameACK, 2);
-				OutputDebugString("Sent an ACK from receiving mode!");
+				if (frameACK[1] == REQ) {
+					OutputDebugString("sent a REQ from receiving mode!");
+				}
+				else {
+					OutputDebugString("Sent an ACK from receiving mode!");
+				}
 				ResetEvent(GOOD_FRAME_EVENT);
 			}
 			else {
@@ -437,6 +446,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
+							SetEvent(enqEvent);
 							OutputDebugString("Received ACK from IDLE state");
 						}
 					}
