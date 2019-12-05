@@ -327,7 +327,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						failedSending =false;
 						countErrorAck = 0;
 						framePointIndex++;
-						checkREQ();
 					}
 					else {
 						//resent frame
@@ -359,7 +358,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			Bid();
 		}
 		else if (wpData->status == RECEIVE_MODE) {
-			if(WaitForSingleObject(GOOD_FRAME_EVENT, 5000) == WAIT_OBJECT_0) {
+			if(WaitForSingleObject(GOOD_FRAME_EVENT, 3000) == WAIT_OBJECT_0) {
 				char frameACK[2];
 				frameACK[0] = wpData->currentSyncByte;
 				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
@@ -499,13 +498,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					else {
 						fRes = TRUE;
 					}
-					//if (fRes == FALSE && result == 2) {
-						if (frameBuffer[1] == EOT) {
-							wpData->status = IDLE;
-							OutputDebugString("received EOT, going back to IDLE from receieve");
-						}
-					//}
-					else if (fRes == TRUE && result == 1024) {
+					if (fRes == TRUE && result == 1024) {
 						if (frameBuffer[1] == STX) {
 							dataLink->incomingFrames.push_back(frameBuffer);
 							if (checkFrame()) {
