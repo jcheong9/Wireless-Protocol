@@ -25,7 +25,9 @@
 HANDLE ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE responseWaitEvent = CreateEvent(NULL, TRUE, TRUE, (LPTSTR)_T("ACK"));
 HANDLE ackEvent = CreateEvent(NULL, TRUE, FALSE, 0);
+HANDLE enqEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE eotEvent;
+HANDLE GOOD_FRAME_EVENT = CreateEvent(NULL, TRUE, FALSE, 0);
 int REQCounter = 0;
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -58,27 +60,28 @@ int Bid() {
 
 	ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	HANDLE dummy = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-	char frameENQ[2] = { 0, ENQ };
-
+	char frameENQ[2];
+	frameENQ[0] = 0x00;
+	frameENQ[1] = ENQ;
+	OutputDebugString(_T("\n......Bidding.....\n"));
 	if (wpData->fileUploaded) {
-		if (WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1)) {
-			if (WaitForSingleObject(ackEvent, timeoutToReceive) == WAIT_OBJECT_0) {
-				ResetEvent(ackEvent);
-				wpData->sentdEnq = true;
-				OutputDebugString(_T("Received"));
-				wpData->status = SEND_MODE;
-			}
-			//timeout
-			else {
-				wpData->sentdEnq = false;
-				randomizedTO = randomizeTimeOut(500, 1000);
-				OutputDebugString(_T("Timeout2"));
-				WaitForSingleObject(dummy, randomizedTO) == WAIT_OBJECT_0;
-			}
+		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
+		wpData->sentdEnq = true;
+		if (WaitForSingleObject(ackEvent, 4000) == WAIT_OBJECT_0) {
+			ResetEvent(ackEvent);
+			OutputDebugString(_T("Setting status to send mode"));
+			wpData->status = SEND_MODE;
+		}
+		//timeout
+		else {
+			wpData->sentdEnq = false;
+			randomizedTO = randomizeTimeOut(500, 3000);
+			OutputDebugString(_T("Timeout2"));
+			WaitForSingleObject(enqEvent, randomizedTO);
+			ResetEvent(enqEvent);
 		}
 	}
-
+	wpData->sentdEnq = false;
 	return 1;
 }
 
@@ -176,8 +179,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 
 	//running completing asynchronously return false
 	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
-	wpData->currentSyncByte = frame[0];
-	OutputDebugString(_T("Send to port."));
+	OutputDebugString(_T("\nSend to port.\n"));
 
 	return 1;
 }
@@ -202,10 +204,12 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 int waitACK() {
-
-	if (WaitForSingleObject(ackEvent, 1000) == WAIT_OBJECT_0) {
+	OutputDebugString("We are waiting for ACK");
+	 if(WaitForSingleObject(ackEvent, 5000) == WAIT_OBJECT_0) {
 		//reset ack event
 		ResetEvent(ackEvent);
+
+		OutputDebugString("\n.........Recieved ACK TEST........\n");
 		return 1;
 	}
 	return 0;
@@ -243,6 +247,7 @@ int checkREQ() {
 			}
 			WaitForSingleObject(eotEvent, 1000);
 			wpData->status = IDLE;
+			wpData->receivedREQ = FALSE;
 			
 			return 1;
 		}
@@ -308,173 +313,239 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 
 DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
-	char str[2];
-	str[1] = '\0';
 	DWORD CommEvent{ 0 };
-
-	int framePointIndex = 0;
-	OutputDebugString(_T("Start Thread SEND"));
-	//test frames
-	//char frame[1024] = { 'J', 'H', 'e', 'l', 'l', 'o' };
-	//char* frame211 = dataLink->uploadedFrames[0];
-	char frameEOT[2] = { 0 , EOT };
+	int framePointIndexlocal = wpData->framePointIndex;
+	char frameEOT[2] = { wpData->currentSyncByte , EOT };
 	char frameREQ[2] = { 0 , REQ };
-	//int size = sizeof(frame);
-	//test send
-	char* framePter;
 	int countErrorAck = 0;
+	int vectorSize = dataLink->uploadedFrames.size();
 	bool errorAck = false;
-	//wpData->fileUploaded = false;
-
-	//WriteFile(wpData->hComm, dataLink->uploadedFrames[0], 1024, 0, &o1);
-	//sendFrame(wpData->hComm, frameREQ, 1024);
-	//sendFrame(wpData->hComm, dataLink->uploadedFrames[0], 1024);
-
+	bool failedSending = true;
 	while (wpData->connected == true) {
-		if (countErrorAck == 3) {
-			countErrorAck = 0;
-			wpData->status = IDLE;
-		}
-		if (wpData->status == SEND_MODE) {
+
+		if (wpData->status == SEND_MODE && wpData->fileUploaded) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
-			if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)){
-				if (waitACK() || true) {
-					errorAck = false;
-					countErrorAck = 0;
-					if (checkREQ()) {		//false, receive REQ or REQCounter == 3
-						OutputDebugString(_T("Send EOT, go to IDLE"));
+			failedSending = true;
+			while (failedSending) {
+				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndexlocal], 1024)) {
+					if (waitACK()) {
+						failedSending =false;
+						countErrorAck = 0;
+						framePointIndexlocal++;
+						checkREQ();
 					}
 					else {
-						sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024);
+						//resent frame
+						failedSending = true;
+						countErrorAck++;
+						OutputDebugString("\n......Resent frame.....\n");
+						if (countErrorAck >= 3) {
+							failedSending = false;
+							errorAck = true;
+							OutputDebugString("\n......Resent frame.....\n");
+							wpData->status = IDLE;
+						}
 					}
 				}
-				else {
-					//resent frame
-					errorAck = true;
-					if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndex], 1024)) {
-						OutputDebugString(_T("Resend Frame"));
-					}
-					countErrorAck++;
-				}
 			}
-			if (framePointIndex < dataLink->uploadedFrames.size() - 1 && !errorAck) {
-				framePointIndex++;
-			}
-			else if(framePointIndex == dataLink->uploadedFrames.size() - 1){
-				framePointIndex = 0; 
+			if (framePointIndexlocal == dataLink->uploadedFrames.size()) {
+				framePointIndexlocal = 0;
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
-				WaitForSingleObject(eotEvent, 1000);
+				WaitForSingleObject(eotEvent, 2000);
+				OutputDebugString(_T("\n......END frame.....\n"));
 				wpData->status = IDLE;
 			}
+			/*if (framePointIndex < dataLink->uploadedFrames.size() -1) {
+			}*/
+
 		}
-		else if(wpData->status == IDLE){	
+		else if(wpData->status == IDLE && wpData->fileUploaded){	
 			Bid();
 		}
+		else if (wpData->status == RECEIVE_MODE) {
+			if(WaitForSingleObject(GOOD_FRAME_EVENT, 5000) == WAIT_OBJECT_0) {
+				char frameACK[2];
+				frameACK[0] = wpData->currentSyncByte;
+				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
+
+				sendFrame(wpData->hComm, frameACK, 2);
+				if (frameACK[1] == REQ) {
+					OutputDebugString("Sent an REQ from receiving mode!");
+				}
+				else {
+					OutputDebugString("Sent an ACK from receiving mode!");
+				}
+				ResetEvent(GOOD_FRAME_EVENT);
+			}
+			else {
+				OutputDebugString("Timeoout!");
+				wpData->status = IDLE;
+			}
+
+		}
+		//OutputDebugString(_T("\n......Running Send thread.....\n"));
+
 	}
 	return 1;
 }
 
-
-int ReadInput(char* buffer) {
-	DWORD dwRes{ 0 };
-	DWORD dwRead{ 0 };
-	OVERLAPPED osReader = { 0 };
-	osReader.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	int maxSize = 1024;
-	int bufferSize = 0;
-	char tempBuffer[2];
-	tempBuffer[1] = '\0';
-	while (bufferSize < maxSize) {
-		if (!ReadFile(wpData->hComm, tempBuffer, 1, &dwRead, &osReader)) {
-			if (GetLastError() != ERROR_IO_PENDING) { // something occured other than waiting for read to complete
-				return 0;
-			}
-			else {
-				dwRes = WaitForSingleObject(osReader.hEvent, 100);  // wait for the read to complete
-			}
-			if (dwRes == WAIT_OBJECT_0) {	// object was signaled, read completed
-				/*if (tempBuffer[0] == ACK || tempBuffer[0] == ENQ)
-					buffer[bufferSize] = tempBuffer[0];
-					break;
-				}
-				else {*/
-					buffer[bufferSize] = tempBuffer[0];
-					bufferSize++;
-				}
-	
-				//if (buffer[bufferSize] == EOT) {
-				//	wpData->status == IDLE; // Received end of transmission
-				//	return 1;
-				//}
-			}
-		else {
-			buffer[bufferSize] = tempBuffer[0];
-			bufferSize++;
-		}
-		}
-	return 1;
-}
 
 
 
 DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	unsigned static int x = 0;
 	unsigned static int y = 0;
-	DWORD CommEvent;
-	OVERLAPPED ol;
-	char str[3];
-	char buffer[1024];
 	char control;
+	BOOL fRes;
+	DWORD CommEvent{ 0 };
+	DWORD result{ 0 };
+	OVERLAPPED ol{ 0 };
+	ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (ol.hEvent == NULL) {
+		OutputDebugString("Couldn't create the event");
+	}
+	char controlBuffer[2];
+	char frameBuffer[1024];
+	SetCommMask(wpData->hComm, EV_RXCHAR);
 	while (wpData->connected == true) {
-		SetCommMask(wpData->hComm, EV_RXCHAR);
 		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
-			OutputDebugString("Received something");
-			ReadInput(buffer);
-			if (buffer[1] == ENQ && wpData->status == IDLE) {
-				OutputDebugString("Received an ENQ");
-				control = buffer[0];
-				sendAcknowledgment(control);
-				wpData->status = RECEIVE_MODE;
-				while (wpData->status == RECEIVE_MODE) {
-					if (!WaitInput(3000)) {
-						wpData->status = IDLE;
+			fRes = FALSE;
+			result = -1;
+			
+			memset(&controlBuffer, 0, sizeof(controlBuffer));
+			int sizeofstuff = sizeof(frameBuffer);
+			switch (wpData->status) {
+				case IDLE:
+					if (!ReadFile(wpData->hComm, controlBuffer, 2, &result, &ol)) {
+						if (GetLastError() != ERROR_IO_PENDING) {
+							fRes = FALSE;
+							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+						}
+						else {
+							if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
+								fRes = FALSE;
+							}
+							else {
+								fRes = TRUE;
+							}
+						}
 					}
 					else {
-						OutputDebugString("Received something");
-						ReadInput(buffer);
-						printToWindow(wpData->hwnd, wpData->hdc, buffer, &x, &y);
-						control = buffer[0];
-						sendAcknowledgment(control);
+						fRes = TRUE;
 					}
-				}
+					if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
+						OutputDebugString("Received 2 chars in IDLE state!");
+						if (controlBuffer[1] == ENQ) {
+							control = controlBuffer[0];
+							sendAcknowledgment(control);
+							wpData->status = RECEIVE_MODE;
+							SetEvent(enqEvent);
+							OutputDebugString("Received ENQ from IDLE state and now I'm receiving");
+						}
+					}
+					else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
+						OutputDebugString("Received 2 chars in IDLE state!");
+						if (controlBuffer[1] == ACK) {
+							SetEvent(ackEvent);
+							wpData->status = SEND_MODE;
+							SetEvent(enqEvent);
+							OutputDebugString("Received ACK from IDLE state");
+						}
+					}
+					else {
+						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+					}
+					break;
+
+				case SEND_MODE:
+					if (!ReadFile(wpData->hComm, controlBuffer, 2, &result, &ol)) {
+						if (GetLastError() != ERROR_IO_PENDING) {
+							fRes = FALSE;
+							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+						}
+						else {
+							if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
+								fRes = FALSE;
+							}
+							else {
+								fRes = TRUE;
+							}
+						}
+					}
+					else {
+						fRes = TRUE;
+					}
+					if (fRes == TRUE && result == 2) {
+						OutputDebugString("Received 2 chars in Send state!");
+						control = controlBuffer[0];
+							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ && control == wpData->currentSyncByte) {
+								SetEvent(ackEvent);
+								OutputDebugString("Received an ACK in Send state!");
+								if (control == REQ) {
+									wpData->receivedREQ = true;
+								}
+							}
+						else {
+							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+						}
+					}
+					else {
+						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+					}
+					break;
+				case RECEIVE_MODE:
+					if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {
+						if (GetLastError() != ERROR_IO_PENDING) {
+							fRes = FALSE;
+							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+						}
+						else {
+							if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
+								fRes = FALSE;
+							}
+							else {
+								fRes = TRUE;
+							}
+						}
+					}
+					else {
+						fRes = TRUE;
+					}
+					//if (fRes == FALSE && result == 2) {
+						if (frameBuffer[1] == EOT) {
+							wpData->status = IDLE;
+							OutputDebugString("received EOT, going back to IDLE from receieve");
+						}
+					//}
+					else if (fRes == TRUE && result == 1024) {
+						if (frameBuffer[1] == STX) {
+							dataLink->incomingFrames.push_back(frameBuffer);
+							if (checkFrame()) {
+								OutputDebugString("Received 1024 chars in Receive State!");
+								// check the frame
+								// if good, set the event
+								wpData->currentSyncByte = frameBuffer[0];
+								SetEvent(GOOD_FRAME_EVENT);
+
+								printToWindowsNew(frameBuffer);
+							}
+						}
+					}
+					else {
+						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+					}
+					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+					break;
 			}
-			else if (buffer[1] == ACK &&  buffer[0] == wpData->currentSyncByte && wpData->status == SEND_MODE ) {
-				SetEvent(ackEvent);
-			}
+				
 		}
 	}
 	return 1;
 }
 
-int WaitInput(DWORD secs) {
-	COMSTAT cs;
-	DWORD dwEvtMask{ 0 };
-	SetCommMask(wpData->hComm, EV_RXCHAR);
-	OVERLAPPED ol;
-	ol.hEvent = CreateEvent(NULL, TRUE, FALSE, 0);
-	if (!WaitCommEvent(wpData->hComm, &dwEvtMask, &ol))
-	{
-		if (GetLastError() == ERROR_IO_PENDING)
-		{
-			if (WaitForSingleObject(ol.hEvent, secs) != WAIT_OBJECT_0)
-				return 0;
-		}
-	}
-	CloseHandle(ol.hEvent);
-	return 1;
-	
-}
+
+
 
 int sendAcknowledgment(char control) {
 	OVERLAPPED ol{ 0 };
@@ -489,9 +560,7 @@ int sendAcknowledgment(char control) {
 	else if (wpData->status == IDLE) {
 		acknowledge[1] = ACK;
 	}
-	if (!WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol)) {
-		OutputDebugString("Failed to send acknowledgment");
-	}
+	WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol);
 	return 0;
 }
 
@@ -502,46 +571,3 @@ int randomizeTimeOut(int range_min, int range_max){
 void swapSyncByte() {
 	wpData->currentSyncByte = wpData->currentSyncByte == 0x00 ? 0xFF : 0x00;
 }
-
-//			//send to datalink to verify checksum for this frame
-//			// if good, sendAcknowledgment()
-//			// else, dont do anything
-//		}
-//		// but if we received an EOT, simply set the state to IDLE, so the bidding can happen.
-//		// read byte by byte
-//		// and then after checking sync byte, send it over to datalink
-
-//	}
-//}
-////	else {
-////		wpData->status = IDLE; // timed out
-////	}
-////}
-////else if (wpData->status == IDLE) {
-////	SetCommMask(wpData->hComm, EV_RXCHAR);
-////	if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
-////		if (Read(wpData->hComm, str, 2, NULL, &ol)) {
-////			if (str[0] == wpData->currentSyncByte && str[1] == ENQ) {
-////				sendAcknowledgment();
-////			}
-////		}
-////		// if i receive ack
-////		// if i am in idle and have seomthing to send
-////		// set event received ACK to true.
-////	}
-////}
-
-////// i am in sending mode and i am waiting to receive an ACK.
-////else if (wpData->status == SEND_MODE) {
-////	SetCommMask(wpData->hComm, EV_RXCHAR);
-////	if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
-////		if (Read(wpData->hComm, str, 2, NULL, &ol)) {
-////			if (str[0] == wpData->currentSyncByte && str[1] == REQ ) {
-////				wpData->receivedREQ = true;
-////				SetEvent(ackEvent);
-////			}
-////			else if (str[0] == wpData->currentSyncByte && str[1] == ACK) {
-////				SetEvent(ackEvent);
-////			}
-////		}
-////	}

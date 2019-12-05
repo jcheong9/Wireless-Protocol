@@ -36,7 +36,7 @@ bool packetizeFile(string filePath) {
 			frameIndex++; 
 			//adding SYN and STX//
 			dataword = dataLink->uploadedFrames.at(frameIndex);
-			syncFlag == 0 ? dataword[charIndex++] = 5 : dataword[charIndex++] = 0xFF;
+			syncFlag == 0 ? dataword[charIndex++] = 0x05 : dataword[charIndex++] = 0xFF;
 			dataword[charIndex++] = 0x02;
 		}
 		dataword[charIndex++] = c;

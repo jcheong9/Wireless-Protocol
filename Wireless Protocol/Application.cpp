@@ -37,7 +37,7 @@ char* newBuffer;
 --				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 --				LPSTR lspszCmdParam, int nCmdShow)
 --				void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
---				void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
+--				void `ToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 --
 -- DATE: September 30, 2019
 --
@@ -47,8 +47,8 @@ char* newBuffer;
 --
 -- PROGRAMMER: Tommy Chang
 --
--- NOTES: 
--- Displays Menu items to configure port settings, enter connect mode, 
+-- NOTES:
+-- Displays Menu items to configure port settings, enter connect mode,
 -- view a help message, and exit the application.
 ----------------------------------------------------------------------------------------------------------------------*/
 
@@ -66,7 +66,7 @@ char* newBuffer;
 -- INTERFACE: int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow)
 --				HINSTANCE hINST: A handle to the current instance of the application.
---				HINSTANCE hprevInstance: A handle to the previous instance of the application. 
+--				HINSTANCE hprevInstance: A handle to the previous instance of the application.
 										This parameter is always NULL.
 --				LPSTR lspszCmdParam: The command line for the application, excluding the program name
 --				int nCmdShow: Specifies how the application windows should be displayed
@@ -85,7 +85,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 {
 	wpData->currentSyncByte = 0x00;
 	wpData->connected = false;
-	wpData->status = IDLE;
+	OutputDebugString(_T("/n....IDLE Set from win main.../n"));
+	wpData->status = COMMAND_MODE;
 	wpData->hComm = NULL;
 	wpData->sentdEnq = false;
 	wpData->fileUploaded = false;
@@ -115,7 +116,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		1218, 850, NULL, NULL, hInst, NULL);
 	setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 	setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
-	
+
 	prepWindow(hInst);
 
 	ShowWindow(wpData->hwnd, nCmdShow);
@@ -183,11 +184,11 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
 {
 
-	TextOut(wpData->hdc, *x,  *y,  str, strlen(str));
+	TextOut(wpData->hdc, *x, *y, str, strlen(str));
 	SIZE size;
 	TEXTMETRIC tm;
 	GetTextMetrics(wpData->hdc, &tm);
-	GetTextExtentPoint32(wpData->hdc,  str, strlen(str), &size);
+	GetTextExtentPoint32(wpData->hdc, str, strlen(str), &size);
 	*x += size.cx; // increment the screen x-coordinate
 	if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
 		*x = 0;
@@ -199,26 +200,35 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 //This takes whole chunks of chars (char*) and appends them to the screen.
 void printToWindowsNew(char* str)
 {
-	// get new length to determine buffer size
-	int newLength = GetWindowTextLength(textHwnd) + lstrlen(str) + 1;
+	char incomingBuffer[1024];
 
+	for (int i = 0; i < 1023; ++i) {
+		incomingBuffer[i] = str[i];
+	}
+	incomingBuffer[1023] = '\0';
+	// get new length to determine buffer size
+	int newIn = lstrlen(incomingBuffer);
+	int newLength = GetWindowTextLength(textHwndRx) + lstrlen(incomingBuffer) + 2;
+	
 	// create buffer to hold current and new text
 	TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
+	int newbuf = lstrlen(newBuffer);
 
 	if (!newBuffer) return;
 
 	// get existing text from edit control and put into buffer
-	GetWindowText(textHwnd, newBuffer, newLength);
-
+	GetWindowText(textHwndRx, newBuffer, newLength);
+	int size = sizeof(newBuffer);
 	// append the newText to the buffer
-	_tcscat_s(newBuffer, newLength, str);
-
+	_tcscat_s(newBuffer, newLength, incomingBuffer);
+	//newBuffer[newLength - 1] = '\0';
+	int bufleng = sizeof(newBuffer);
 	// Set the text in the edit control
-	SetWindowText(textHwnd, newBuffer);
+	SetWindowText(textHwndRx, newBuffer);
 
 	// free the buffer
 	GlobalFree(newBuffer);
-	
+
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -267,7 +277,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		{
 		case IDM_COM1:
 			if (wpData->hComm == NULL) {
-				wpData->hComm = OpenPort((LPCWSTR) portNumber);
+				wpData->hComm = OpenPort((LPCWSTR)portNumber);
 				ConfigPort(wpData->hwnd, wpData->hComm, portNumber);
 				setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED);
 
@@ -285,6 +295,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 			if (wpData->connected == false) {
 				wpData->connected = true;
+				wpData->status = IDLE;
 				wpData->hdc = GetDC(wpData->hwnd);
 				if (readThread == NULL) {
 					sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadId);
@@ -301,8 +312,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			if (addFile(ofn)) {
 				if (packetizeFile(ofn.lpstrFile) != 1) {
 					MessageBox(NULL, TEXT("Error occured while trying to packetize the file."), TEXT("ERROR | DataLink Layer"), MB_OK);
-					
-				}else {
+
+				}
+				else {
 					wpData->fileUploaded = true;
 					vector<char*> a = dataLink->uploadedFrames;
 					int b = a.size();
@@ -322,15 +334,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_DISCONNECT:
 			wpData->connected = false;
+			wpData->fileUploaded = false;
 			wpData->status = COMMAND_MODE;
-			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED );
+			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED);
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 			break;
 
 		case IDM_HELP:
-				//MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
-				//TEXT("Help"), MB_OK);
-				printToWindowsNew((char*)"Two before narrow not relied how except moment myself. Dejection assurance mrs led certainly. So gate at no only none open. Betrayed at properly it of graceful on. Dinner abroad am depart ye turned hearts as me wished. Therefore allowance too perfectly gentleman supposing man his now. Families goodness all eat out bed steepest servants. Explained the incommode sir improving northward immediate eat. Man denoting received you sex possible you. Shew park own loud son door less yet.");
+			//MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
+			//TEXT("Help"), MB_OK);
+			printToWindowsNew((char*)"Two before narrow not relied how except moment myself. Dejection assurance mrs led certainly. So gate at no only none open. Betrayed at properly it of graceful on. Dinner abroad am depart ye turned hearts as me wished. Therefore allowance too perfectly gentleman supposing man his now. Families goodness all eat out bed steepest servants. Explained the incommode sir improving northward immediate eat. Man denoting received you sex possible you. Shew park own loud son door less yet.");
 			break;
 
 		case IDM_EXIT:
@@ -388,14 +401,14 @@ BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* 
 
 
 	lvc.iSubItem = col;
-	lvc.pszText = (LPSTR) colName;
+	lvc.pszText = (LPSTR)colName;
 	lvc.cx = 150;               // Width of column in pixels.
 	lvc.fmt = LVCFMT_LEFT;  // center-aligned column.
 
 
 	// Load the names of the column headings from the string resources.
 	LoadString(hInst,
-		UINT (colName + iCol),
+		UINT(colName + iCol),
 		szText,
 		sizeof(szText) / sizeof(szText[0]));
 
@@ -405,8 +418,8 @@ BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* 
 
 	if (col == 1)
 		col = 0;
-	else 
-		col++; 
+	else
+		col++;
 
 	return TRUE;
 }
