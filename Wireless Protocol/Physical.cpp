@@ -236,7 +236,10 @@ int waitACK() {
 ----------------------------------------------------------------------------------------------------------------------*/
 //return 0 no REQ or REQCounter < 3
 int checkREQ() {
-	char frameEOT[2] = { 0x00, EOT };
+	char frameEOT[1024];
+	memset(&frameEOT, 0, sizeof(EOT));
+	frameEOT[0] = '\0';
+	frameEOT[1] = EOT;
 	if (wpData->receivedREQ == TRUE && REQCounter < 3) {
 		REQCounter++;
 		if (REQCounter == 3) {
@@ -314,7 +317,10 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
 	DWORD CommEvent{ 0 };
-	char frameEOT[2] = { 0x00 , EOT };
+	char frameEOT[1024];
+	memset(&frameEOT, 0, sizeof(EOT));
+	frameEOT[0] = '\0';
+	frameEOT[1] = EOT;
 	char frameREQ[2] = { 0 , REQ };
 	int countErrorAck = 0;
 	int vectorSize = dataLink->uploadedFrames.size();
@@ -356,7 +362,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			if (wpData->framePointIndex == dataLink->uploadedFrames.size()) {
 				wpData->framePointIndex = 0;
 				wpData->fileUploaded = false;
-				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
+				sendFrame(wpData->hComm, frameEOT, 1024);
 				wpData->sentdEnq = false;
 				OutputDebugString(_T("\n......END frame.....\n"));
 				wpData->status = IDLE;
@@ -428,6 +434,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	while (wpData->connected == true) {
 		memset(&frameBuffer, 0, sizeof(frameBuffer));
 		memset(&controlBuffer, 0, sizeof(controlBuffer));
+		//wpData->status = RECEIVE_MODE;
 		if (WaitCommEvent(wpData->hComm, &CommEvent, 0)) {
 			fRes = FALSE;
 			result = -1;
@@ -511,8 +518,12 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					break;
 				case RECEIVE_MODE:
-					if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {						
-						if (GetLastError() != ERROR_IO_PENDING) {
+					if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {	
+						if (frameBuffer[1] == EOT) {
+							wpData->status = IDLE;
+							OutputDebugString("received EOT, going back to IDLE from receieve");
+							break;
+						} else if (GetLastError() != ERROR_IO_PENDING) {
 							fRes = FALSE;
 							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 						}
