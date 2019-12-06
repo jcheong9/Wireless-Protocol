@@ -175,8 +175,6 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	DWORD CommEvent{ 0 };
 	OVERLAPPED o1{ 0 };
 
-	char frame11[FRAME_SIZE];
-
 	//running completing asynchronously return false
 	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
 	OutputDebugString(_T("\nSend to port.\n"));
@@ -184,6 +182,17 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	return 1;
 }
 
+int sendEOT(HANDLE hComm, char* frame, DWORD nBytesToRead) {
+	DWORD CommEvent{ 0 };
+	OVERLAPPED o1{ 0 };
+
+	//running completing asynchronously return false
+	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
+		OutputDebugString(_T("\nENQ sent\n"));
+	
+
+	return 1;
+}
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: waitACK
 --
@@ -246,6 +255,7 @@ int checkREQ() {
 				OutputDebugString(_T("Sent EOT."));
 			}
 			WaitForSingleObject(eotEvent, 1000);
+
 			wpData->status = IDLE;
 			wpData->receivedREQ = FALSE;
 			
@@ -351,10 +361,11 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			if (wpData->framePointIndex == dataLink->uploadedFrames.size()) {
 				wpData->framePointIndex = 0;
 				wpData->fileUploaded = false;
-				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
+				sendEOT(wpData->hComm, frameEOT, 2);
+				wpData->status = IDLE;
 				WaitForSingleObject(eotEvent, 3000);
 				OutputDebugString(_T("\n......END frame.....\n"));
-				wpData->status = IDLE;
+				
 			}
 			/*if (framePointIndex < dataLink->uploadedFrames.size() -1) {
 			}*/
