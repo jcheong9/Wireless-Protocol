@@ -184,8 +184,15 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	if (frame[1] == EOT) {
 		WriteFile(hComm, frame, nBytesToRead, 0, &o1);
 		wpData->status = IDLE;
+
 		wpData->sentdEnq = false;
 		wpData->receivedREQ = false;
+		if (WaitForSingleObject(enqEvent, 4000) == WAIT_OBJECT_0) {
+
+			OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
+			ResetEvent(enqEvent);
+		}
+		
 		OutputDebugString("Sending an EOT from sendFrame");
 		return 1;
 	}
@@ -269,13 +276,13 @@ int checkREQ() {
 				//wpData->fileUploaded = false;
 			}
 
-			wpData->status = IDLE;
+/*			wpData->status = IDLE;
 
 			if (WaitForSingleObject(enqEvent, 4000) == WAIT_OBJECT_0) {
 				
 				OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
 				ResetEvent(enqEvent);
-			}			
+			}	*/		
 			return 1;
 		}
 	}
@@ -588,13 +595,13 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						fRes = TRUE;
 					}
 					//if (fRes == FALSE && result == 2) {
-						if (frameBuffer[1] == EOT) {
-							wpData->status = IDLE;
-							OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
-							break;
-						}
+						//if (frameBuffer[1] == EOT) {
+						//	wpData->status = IDLE;
+						//	OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
+						//	break;
+						//}
 					//}
-					else if (fRes == TRUE && result == 1024) {
+					if (fRes == TRUE && result == 1024) {
 
 						if (frameBuffer[1] == STX) {
 							dataLink->incomingFrames.push_back(frameBuffer);
