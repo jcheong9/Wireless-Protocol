@@ -19,13 +19,13 @@
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Sam Lee
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Sam Lee
 --
 -- NOTES:
--- Displays Menu items to configure port settings, enter connect mode,
--- view a help message, and exit the application.
+-- This file has functionalities that are related to frames.
+-- It does packitize textfiles into multiple frame, and check incoming frames with CRC error detection.
 ----------------------------------------------------------------------------------------------------------------------*/
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@
 -- RETURNS: bool
 --
 -- NOTES:
---
+-- It splits an uploaded text file into multiple frames of which the size is 1024 with header and checksum values
 ----------------------------------------------------------------------------------------------------------------------*/
 DataLink * dataLink = new DataLink();
 bool packetizeFile(string filePath) {
@@ -122,7 +122,7 @@ bool packetizeFile(string filePath) {
 -- RETURNS: void
 --
 -- NOTES:
---
+-- It creates a new frame to store 1017 size of data word from an uploaded file
 ----------------------------------------------------------------------------------------------------------------------*/
 void initialize_frame() {
 	//initialize a frame(char array)
@@ -151,7 +151,7 @@ void initialize_frame() {
 -- RETURNS: string
 --
 -- NOTES:
---
+-- This function takes chars and run CRC_32 checksum and return the hex value in string format
 ----------------------------------------------------------------------------------------------------------------------*/
 string crc(char* buffer, streamsize buffer_size) {
 	boost::crc_32_type  result;
@@ -179,7 +179,8 @@ string crc(char* buffer, streamsize buffer_size) {
 -- RETURNS: bool
 --
 -- NOTES:
---
+-- This function checks a frame and run CRC with dataword and the first two bytes and compare the result with 
+-- the received frame's CRC value
 ----------------------------------------------------------------------------------------------------------------------*/
 bool checkFrame() {
 	vector<char*> frames = dataLink->incomingFrames;
@@ -226,14 +227,14 @@ bool checkFrame() {
 -- RETURNS: void
 --
 -- NOTES:
---
+-- It stores valid dadtaword into header file's string for application layer to print out
 ----------------------------------------------------------------------------------------------------------------------*/
 void storePrintingBuffer(char* dataword) {
 	string dataword_str;
 	for (int i = 0; i < FRAME_SIZE - 7; i++) {
 		if (dataword[i] != 0) dataword_str += dataword[i];
 	}
-	dataLink->validDataword.push_back(dataword_str);
+	dataLink->validDataword = dataword_str;
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: clearReceivingBuffer
@@ -252,7 +253,7 @@ void storePrintingBuffer(char* dataword) {
 -- RETURNS: void
 --
 -- NOTES:
---
+-- It clears buffer when a corrupted frame has been received.
 ----------------------------------------------------------------------------------------------------------------------*/
 void clearReceivingBuffer() {
 	dataLink->incomingFrames.erase(dataLink->incomingFrames.begin());
