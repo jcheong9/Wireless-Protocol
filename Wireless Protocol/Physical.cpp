@@ -152,7 +152,6 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 }
 
 
-
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: sendFrame
 --
@@ -169,7 +168,8 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 --
 -- RETURNS: int 1 successfully sent; int 0 failed to sent.
 --
--- NOTES: Writes the frame received from datalink. Check end of transmition and set status to IDLE
+-- NOTES: Writes the frame received from datalink. Check end of transmition and set status to IDLE. Display
+-- the send frame on the screen.
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 
@@ -239,10 +239,10 @@ int waitACK() {
 --
 -- RETURNS: int 1 when receive ACK; int 0 when no ACK
 --
--- NOTES: Waits for an ACK using event driven.
+-- NOTES: This function check REQ conditions. The function check file is staged and count the frames received then
+-- sent EOT. After EOT, the thread sleep for 2 second.
 --
 ----------------------------------------------------------------------------------------------------------------------*/
-//return 0 no REQ or REQCounter < 3
 
 int checkREQ() {
 	char frameEOT[1024];
@@ -311,7 +311,7 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: ReadFunc
+-- FUNCTION: ThreadSendProc
 --
 -- DATE: September 30, 2019
 --
@@ -321,14 +321,14 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 --
 -- PROGRAMMER: Jameson Cheong
 --
--- INTERFACE: DWORD WINAPI ReadFunc(LPVOID n)
---				LPVOID n: structure passed in to the thread
+-- INTERFACE: DWORD WINAPI ThreadSendProc(LPVOID n)
 --
 -- RETURNS: DWORD
 --
 -- NOTES: Function that is executed by a thread created when user enters "connect" mode for the first time.
--- Stays in an infinite loop, and monitors if a character was received and placed in the input buffer.
--- If there is a character in the input buffer, receives the character into the str buffer by calling Read 
+-- Stays in an infinite loop, and monitors the status. There are three status (IDLE, SEND_MODE, RECEIVE_MODE)
+-- this function monitor. 
+--
 ----------------------------------------------------------------------------------------------------------------------*/
 
 DWORD WINAPI ThreadSendProc(LPVOID n) {
@@ -347,7 +347,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	while (wpData->connected == true) {
 		PurgeComm(wpData->hComm, PURGE_TXCLEAR);
 		if (wpData->status == SEND_MODE && wpData->fileUploaded) {
-			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			failedSending = true;
 			while (failedSending) {
 				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[wpData->framePointIndex], 1024)) {
@@ -386,8 +385,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					OutputDebugString(_T("\n......END frame.....\n"));
 				}
 			}
-			/*if (framePointIndex < dataLink->uploadedFrames.size() -1) {
-			}*/
 
 		}
 		else if(wpData->status == IDLE && wpData->fileUploaded){	
