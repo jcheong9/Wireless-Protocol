@@ -199,7 +199,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Jameson Cheong
 --
 -- PROGRAMMER: Jameson Cheong
 --
@@ -317,9 +317,9 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 --
 -- REVISIONS: none
 --
--- DESIGNER: Jameson Chang
+-- DESIGNER: Jameson Cheong
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Jameson Cheong
 --
 -- INTERFACE: DWORD WINAPI ReadFunc(LPVOID n)
 --				LPVOID n: structure passed in to the thread
@@ -429,7 +429,26 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 
 
 
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: ThreadReceiveProc
+--
+-- DATE: September 30, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- INTERFACE: DWORD WINAPI ReadFunc(LPVOID n)
+--				LPVOID n: structure passed in to the thread
+--
+-- RETURNS: DWORD
+--
+-- NOTES: Function that is executed by a thread created when user enters "connect" mode for the first time.
+-- Stays in an infinite loop, and monitors if a character was received and placed in the input buffer.
+-- If there is a character in the input buffer, receives the character into the str buffer by calling Read
+----------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	unsigned static int x = 0;
 	unsigned static int y = 0;
