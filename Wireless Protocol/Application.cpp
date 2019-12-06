@@ -482,9 +482,9 @@ void prepWindow(HINSTANCE hInst) {
 	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Statistics");
 
 
-	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)buf);
-	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)bufACK);
-	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)bufREQ);
+	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)"0");
 
 	/*
 	Receive section
@@ -508,12 +508,12 @@ void prepWindow(HINSTANCE hInst) {
 	_stprintf(bufACK, _T("%d"), wpData->countAckReceive);
 	_stprintf(bufREQ, _T("%d"), wpData->countReqReceive);
 	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Statistics");
-	ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)buf);
-	ListView_SetItemText(hWndListViewRx, 1, 1, (LPSTR)bufACK);
-	ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)bufREQ);
+	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)"0");
 }
 
-void updateStats(unsigned long newValue, int rowPosition) {
+void updateStats(LPSTR newValue, int rowPosition) {
 	switch (rowPosition) {
 	case (10):
 		ListView_SetItemText(hWndListView, 0, 1, (LPSTR)newValue);

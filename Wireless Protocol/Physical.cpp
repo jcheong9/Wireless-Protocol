@@ -81,8 +81,8 @@ int Bid() {
 			ResetEvent(enqEvent);
 		}
 	}
-	wpData->sentdEnq = false;
-	return 1;
+
+	return 0;
 }
 
 
@@ -323,6 +323,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
 	DWORD CommEvent{ 0 };
 	char frameEOT[1024];
+	TCHAR buf[1024];
 	memset(&frameEOT, 0, sizeof(EOT));
 	frameEOT[0] = '\0';
 	frameEOT[1] = EOT;
@@ -338,6 +339,9 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			failedSending = true;
 			while (failedSending) {
 				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[wpData->framePointIndex], 1024)) {
+					++wpData->countFramesSend;
+					_stprintf(buf, _T("%d"), wpData->countFramesSend);
+					updateStats((LPSTR)buf, 10);
 					if (waitACK()) {
 						failedSending =false;
 						countErrorAck = 0;
@@ -389,9 +393,15 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				sendFrame(wpData->hComm, frameACK, 2);
 				if (frameACK[1] == REQ) {
 					OutputDebugString("Sent an REQ from receiving mode!");
+					++wpData->countReqSend;
+					_stprintf(buf, _T("%d"), wpData->countReqSend);
+					updateStats((LPSTR)buf, 12);
 				}
 				else {
 					OutputDebugString("Sent an ACK from receiving mode!");
+					++wpData->countAckSend;
+					_stprintf(buf, _T("%d"), wpData->countAckSend);
+					updateStats((LPSTR)buf, 11);
 				}
 				ResetEvent(GOOD_FRAME_EVENT);
 			}
@@ -414,6 +424,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	unsigned static int x = 0;
 	unsigned static int y = 0;
 	char control;
+	TCHAR buf[1024];
 	BOOL fRes;
 	DWORD CommEvent{ 0 };
 	DWORD result{ 0 };
@@ -469,6 +480,9 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
 							OutputDebugString("Received ACK from IDLE state");
+							wpData->countAckReceive;
+							_stprintf(buf, _T("%d"), wpData->countAckReceive);
+							updateStats((LPSTR)buf, 21);
 						}
 					}
 					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
@@ -499,9 +513,15 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 								SetEvent(ackEvent);
 								if (control == ACK) {
 									OutputDebugString("Received an ACK from sending mode");
+									++wpData->countAckReceive;
+									_stprintf(buf, _T("%d"), wpData->countAckReceive);
+									updateStats((LPSTR)buf, 21);
 								}
 								else {
 									OutputDebugString("Received a REQ frmo sending mode");
+									++wpData->countFramesReceive;
+									_stprintf(buf, _T("%d"), wpData->countFramesReceive);
+									updateStats((LPSTR)buf, 20);
 								}
 								if (control == REQ) {
 									wpData->receivedREQ = true;

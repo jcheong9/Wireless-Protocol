@@ -43,6 +43,7 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 void printToWindowsNew(char str[]);
 BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName);
 void addColumns(HWND hwndLV, LVITEM* lvItem);
+void updateStats(LPSTR newValue, int rowPosition);
 
 void prepWindow(HINSTANCE hInst);
 void updateStats(LPSTR newValue, int rowPosition);
