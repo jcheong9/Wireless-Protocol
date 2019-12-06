@@ -236,7 +236,10 @@ int waitACK() {
 ----------------------------------------------------------------------------------------------------------------------*/
 //return 0 no REQ or REQCounter < 3
 int checkREQ() {
-	char frameEOT[2] = { 0x00, EOT };
+	char frameEOT[1024];
+	memset(&frameEOT, 0, sizeof(EOT));
+	frameEOT[0] = '\0';
+	frameEOT[1] = EOT;
 	if (wpData->receivedREQ == TRUE && REQCounter < 3) {
 		REQCounter++;
 		if (REQCounter == 3) {
