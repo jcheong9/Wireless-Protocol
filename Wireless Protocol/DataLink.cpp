@@ -1,7 +1,52 @@
 #include "DataLink.h"
 #define DWORD_SIZE 1017
 #define FRAME_SIZE 1024
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: DataLink.cpp - This application processes incomming and outgoing frames using the provided functions.
+--
+--
+-- PROGRAM: Wireless Protocol
+--
+-- FUNCTIONS:
+--				bool packetizeFile(string filePath)
+--				void initialize_frame()
+--				string crc(char* buffer, streamsize buffer_size)
+--				bool checkFrame()
+--				void storePrintingBuffer(char* dataword)
+--				void clearReceivingBuffer()
+--
+-- DATE: September 30, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- NOTES:
+-- Displays Menu items to configure port settings, enter connect mode,
+-- view a help message, and exit the application.
+----------------------------------------------------------------------------------------------------------------------*/
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: packetizeFile
+--
+-- DATE: Demember 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Sam Lee
+--
+-- PROGRAMMER: Sam Lee
+--
+-- INTERFACE: bool packetizeFile(string filePath)
+--
+--
+-- RETURNS: bool
+--
+-- NOTES:
+--
+----------------------------------------------------------------------------------------------------------------------*/
 DataLink * dataLink = new DataLink();
 bool packetizeFile(string filePath) {
 	ifstream file{ filePath };
@@ -60,6 +105,25 @@ bool packetizeFile(string filePath) {
 	}
 	return true;
 }
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: initialize_frame
+--
+-- DATE: Demember 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Sam Lee
+--
+-- PROGRAMMER: Sam Lee
+--
+-- INTERFACE: void initialize_frame()
+--
+--
+-- RETURNS: void
+--
+-- NOTES:
+--
+----------------------------------------------------------------------------------------------------------------------*/
 void initialize_frame() {
 	//initialize a frame(char array)
 	dataLink->uploadedFrames.push_back(new char[FRAME_SIZE]());
@@ -70,7 +134,25 @@ void initialize_frame() {
 	dataLink->syncFlag == 0 ? dataLink->dataword[dataLink->charIndex++] = 0x00 : dataLink->dataword[dataLink->charIndex++] = 0xFF;
 	dataLink->dataword[dataLink->charIndex++] = 0x02;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: crc
+--
+-- DATE: Demember 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Sam Lee
+--
+-- PROGRAMMER: Sam Lee
+--
+-- INTERFACE: string crc(char* buffer, streamsize buffer_size)
+--
+--
+-- RETURNS: string
+--
+-- NOTES:
+--
+----------------------------------------------------------------------------------------------------------------------*/
 string crc(char* buffer, streamsize buffer_size) {
 	boost::crc_32_type  result;
 	result.process_bytes(buffer, buffer_size);
@@ -80,7 +162,25 @@ string crc(char* buffer, streamsize buffer_size) {
 	string result_in_hex(stream.str());
 	return result_in_hex;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: checkFrame
+--
+-- DATE: Demember 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Sam Lee
+--
+-- PROGRAMMER: Sam Lee
+--
+-- INTERFACE: bool checkFrame()
+--
+--
+-- RETURNS: bool
+--
+-- NOTES:
+--
+----------------------------------------------------------------------------------------------------------------------*/
 bool checkFrame() {
 	vector<char*> frames = dataLink->incomingFrames;
 	if (frames.size() != 0) {
@@ -109,7 +209,25 @@ bool checkFrame() {
 	}
 	return false;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: storePrintingBuffer
+--
+-- DATE: Demember 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Sam Lee
+--
+-- PROGRAMMER: Sam Lee
+--
+-- INTERFACE: void storePrintingBuffer(char* dataword)
+--
+--
+-- RETURNS: void
+--
+-- NOTES:
+--
+----------------------------------------------------------------------------------------------------------------------*/
 void storePrintingBuffer(char* dataword) {
 	string dataword_str;
 	for (int i = 0; i < FRAME_SIZE - 7; i++) {
@@ -117,7 +235,25 @@ void storePrintingBuffer(char* dataword) {
 	}
 	dataLink->validDataword.push_back(dataword_str);
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: clearReceivingBuffer
+--
+-- DATE: Demember 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Sam Lee
+--
+-- PROGRAMMER: Sam Lee
+--
+-- INTERFACE: void clearReceivingBuffer()
+--
+--
+-- RETURNS: void
+--
+-- NOTES:
+--
+----------------------------------------------------------------------------------------------------------------------*/
 void clearReceivingBuffer() {
 	dataLink->incomingFrames.erase(dataLink->incomingFrames.begin());
 }

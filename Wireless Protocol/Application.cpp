@@ -3,6 +3,32 @@
 #include <stdio.h>
 #pragma warning (disable: 4096)
 
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: Application.cpp - An application that will act as a Wireless Protocol interface for half duplex links
+-- Provides a high-level GUI with menu buttons for users to access and use communication functions
+--
+--
+-- PROGRAM: Wireless Protocol
+--
+-- FUNCTIONS:
+--				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
+--				LPSTR lspszCmdParam, int nCmdShow)
+--				void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
+--				void ToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
+--
+-- DATE: September 30, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- NOTES:
+-- Displays Menu items to configure port settings, enter connect mode,
+-- view a help message, and exit the application.
+----------------------------------------------------------------------------------------------------------------------*/
+
 static HWND hList = NULL;  // List View identifier
 LVCOLUMN LvCol;
 LVITEM LvItem;
@@ -25,33 +51,6 @@ HWND hWndListViewRx;
 char* buff;
 char* buffNewText;
 char* newBuffer;
-
-/*------------------------------------------------------------------------------------------------------------------
--- SOURCE FILE: Application.c - An application that will act as a dumb terminal
--- Provides a high-level GUI with menu buttons for users to access and use communication functions
---
---
--- PROGRAM: Dumb Terminal
---
--- FUNCTIONS:
---				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
---				LPSTR lspszCmdParam, int nCmdShow)
---				void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
---				void `ToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
---
--- DATE: September 30, 2019
---
--- REVISIONS: none
---
--- DESIGNER: Tommy Chang
---
--- PROGRAMMER: Tommy Chang
---
--- NOTES:
--- Displays Menu items to configure port settings, enter connect mode,
--- view a help message, and exit the application.
-----------------------------------------------------------------------------------------------------------------------*/
-
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WinMain
 --
@@ -196,6 +195,25 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 	}
 	ReleaseDC(wpData->hwnd, wpData->hdc);
 }
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: printToWindow
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: void printToWindowsNew(char* str)
+--				
+-- RETURNS: void
+--
+-- NOTES:
+-- This function prints the character stored in the str buffer to a particular x and y coordinate of the window.
+----------------------------------------------------------------------------------------------------------------------*/
 
 //This takes whole chunks of chars (char*) and appends them to the screen.
 void printToWindowsNew(char* str)
@@ -390,7 +408,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	}
 	return 0;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: InitListViewColumns
+--
+-- DATE: December 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName)
+--
+-- RETURNS: BOOL
+--
+-- NOTES:
+-- This is the default function that is called when a message is dispatched.
+----------------------------------------------------------------------------------------------------------------------*/
 BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName)
 {
 	char szText[256];     // Temporary buffer.
@@ -426,7 +461,24 @@ BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* 
 
 	return TRUE;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: addColumns
+--
+-- DATE: December 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: void addColumns(HWND hwndLV, LVITEM* lvItem)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the default function that is called when a message is dispatched.
+----------------------------------------------------------------------------------------------------------------------*/
 void addColumns(HWND hwndLV, LVITEM* lvItem) {
 	LVITEM lvI;
 
@@ -449,7 +501,24 @@ void addColumns(HWND hwndLV, LVITEM* lvItem) {
 
 	lvItem = &lvI;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: prepWindow
+--
+-- DATE: December 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: void prepWindow(HINSTANCE hInst)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the default function that is called when a message is dispatched.
+----------------------------------------------------------------------------------------------------------------------*/
 void prepWindow(HINSTANCE hInst) {
 	/*
 	Send section
@@ -509,7 +578,24 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListViewRx, 1, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)"0");
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: updateStats
+--
+-- DATE: December 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: void updateStats(LPSTR newValue, int rowPosition)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the default function that is called when a message is dispatched.
+----------------------------------------------------------------------------------------------------------------------*/
 void updateStats(LPSTR newValue, int rowPosition) {
 	switch (rowPosition) {
 	case (10):

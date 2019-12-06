@@ -3,13 +3,16 @@
 -- SOURCE FILE: Physical.c - Contains RS-232 and system level flow control functions
 --
 --
--- PROGRAM: Dumb Terminal
+-- PROGRAM: Wireless Protocol
 --
 -- FUNCTIONS:
+--				int Bid()
+--				int waitACK()
 --				HANDLE OpenPort(LPCWSTR lpszCommName)
---				int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize)
 --				int Write(HANDLE hComm, TCHAR character)
 --				DWORD WINAPI Read(LPVOID n)
+--				int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize)
+--				int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead)
 --
 -- DATE: September 30, 2019
 --
@@ -85,8 +88,6 @@ int Bid() {
 	return 0;
 }
 
-
-
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
 --
@@ -106,8 +107,6 @@ int Bid() {
 -- NOTES: Opens the serial port "lpszCommName" and returns a handle to the port.
 --
 ----------------------------------------------------------------------------------------------------------------------*/
-
-
 HANDLE OpenPort(LPCWSTR lpszCommName) {
 	HANDLE hComm;
 	hComm = CreateFile((LPCSTR) lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,

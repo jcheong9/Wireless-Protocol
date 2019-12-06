@@ -9,10 +9,10 @@ HDC hdc;
 PAINTSTRUCT paintstruct;
 OVERLAPPED o1 = { 0 };
 /*------------------------------------------------------------------------------------------------------------------
--- SOURCE FILE: Session.c - A Windows application that will act as a dumb terminal
+-- SOURCE FILE: Session.c - A Windows application that will act as a Wireless Protocol
 -- that writes to a serial port and reads from a serial port and displays it on the screen
 --
--- PROGRAM: Dumb Terminal
+-- PROGRAM: Wireless Protocol
 --
 -- FUNCTIONS:
 -- void ConfigurePort(HWND hwnd, HANDLE hComm, LPCWSTR lpszCommName)
@@ -69,7 +69,6 @@ boolean addFile(OPENFILENAME &ofn) {
 -- NOTES:
 -- 
 ----------------------------------------------------------------------------------------------------------------------*/
-
 
 int ConfigPort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	COMMCONFIG cc;
