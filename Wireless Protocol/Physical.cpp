@@ -580,6 +580,9 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 								SetEvent(GOOD_FRAME_EVENT);
 								printToWindowsNew(frameBuffer);
 							}
+							else {
+								OutputDebugString("Bad frame, failed checkframe()");
+							}
 						}
 					}
 					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
