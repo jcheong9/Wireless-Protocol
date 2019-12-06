@@ -336,6 +336,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			wpData->connected = false;
 			wpData->fileUploaded = false;
 			wpData->status = COMMAND_MODE;
+			wpData->status = false;
+			wpData->receivedREQ = FALSE;
 			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED);
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 			break;
@@ -376,9 +378,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DESTROY:	// Terminate program
+
 		if (wpData->hComm) {
 			CloseHandle(wpData->hComm);
-			delete wpData;
+			//delete wpData;
 		}
 		PostQuitMessage(0);
 		break;
