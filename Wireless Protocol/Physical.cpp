@@ -31,6 +31,7 @@ HANDLE ackEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE enqEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 HANDLE eotEvent;
 HANDLE GOOD_FRAME_EVENT = CreateEvent(NULL, TRUE, FALSE, 0);
+TCHAR buf[1024];
 int REQCounter = 0;
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -72,7 +73,7 @@ int Bid() {
 		wpData->sentdEnq = true;
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 
-		if (WaitForSingleObject(ackEvent, 2500) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(ackEvent, 1500) == WAIT_OBJECT_0) {
 			wpData->status = SEND_MODE;
 			ResetEvent(ackEvent);
 			OutputDebugString(_T("Setting status to send mode"));
@@ -80,7 +81,8 @@ int Bid() {
 		//timeout
 		else {
 			wpData->sentdEnq = false;
-			randomizedTO = randomizeTimeOut(500, 5000);
+			wpData->status = IDLE;
+			randomizedTO = randomizeTimeOut(500, 1500);
 			OutputDebugString(_T("Timeout Bidding ENQ"));
 			WaitForSingleObject(enqEvent, randomizedTO);
 			ResetEvent(enqEvent);
@@ -252,7 +254,7 @@ int checkREQ() {
 	if (wpData->receivedREQ == TRUE && REQCounter < 6) {
 		REQCounter++;
 		if (REQCounter == 6) {
-			//To do sent EOT .... need packize eot frame
+			//Send EOT .... need packize eot frame
 			REQCounter = 0;
 			if (sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
 				OutputDebugString(_T("Sent EOT due to REQCounter."));
@@ -262,7 +264,7 @@ int checkREQ() {
 			wpData->status = IDLE;
 			wpData->receivedREQ = FALSE;
 
-			if (WaitForSingleObject(enqEvent, 2000) == WAIT_OBJECT_0) {
+			if (WaitForSingleObject(enqEvent, 6000) == WAIT_OBJECT_0) {
 				wpData->status = RECEIVE_MODE;
 				OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
 				ResetEvent(enqEvent);
@@ -335,7 +337,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
 	DWORD CommEvent{ 0 };
 	char frameEOT[1024];
-	TCHAR buf[1024];
 	memset(&frameEOT, 0, sizeof(EOT));
 	frameEOT[0] = '\0';
 	frameEOT[1] = EOT;
@@ -364,6 +365,8 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						failedSending = true;
 						countErrorAck++;
 						OutputDebugString("\n......Resent frame.....\n");
+						_stprintf_s(buf, _T("%d"), ++wpData->framesResent);
+						updateStats((LPSTR)buf, 13);
 						if (countErrorAck >= 3) {
 							failedSending = false;
 							errorAck = true;
@@ -509,8 +512,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
 							OutputDebugString("Received ACK from IDLE state");
-							++wpData->countAckReceive;
-							_stprintf_s(buf, _T("%d"), wpData->countAckReceive);
+							_stprintf_s(buf, _T("%d"), ++wpData->countAckReceive);
 							updateStats((LPSTR)buf, 21);
 						}
 					}
@@ -554,7 +556,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 									OutputDebugString(_T("Received a REQ from sending mode"));
 									++wpData->countReqReceive;
 									_stprintf_s(buf, _T("%d"), wpData->countReqReceive);
-									updateStats((LPSTR)buf, 20);
+									updateStats((LPSTR)buf, 22);
 								}
 
 							}
@@ -600,18 +602,20 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						if (frameBuffer[1] == STX) {
 							dataLink->incomingFrames.push_back(frameBuffer);
 							if (checkFrame()) {
+
 								OutputDebugString("Received 1024 chars in Receive State!");
 								// check the frame
 								// if good, set the event
 								++wpData->countFramesReceive;
 								_stprintf_s(buf, _T("%d"), wpData->countFramesReceive);
 								updateStats((LPSTR)buf, 20);
-
 								wpData->currentSyncByte = frameBuffer[0];
 								SetEvent(GOOD_FRAME_EVENT);
-								printToWindowsNew(frameBuffer,1);
+								printToWindowsNew(frameBuffer, 1);
 							}
 							else {
+								_stprintf_s(buf, _T("%d"), ++wpData->badFrames);
+								updateStats((LPSTR)buf, 23);
 								OutputDebugString(_T("Bad frame, failed checkframe()"));
 							}
 						}
@@ -632,15 +636,9 @@ int sendAcknowledgment(char control) {
 	OVERLAPPED ol{ 0 };
 	char acknowledge[2];
 	acknowledge[0] = control;
-	if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == false) {
+	if (wpData->status == RECEIVE_MODE) {
 		OutputDebugString("Received mode ACK");
-
 		acknowledge[1] = ACK;
-	}
-	else if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == true) {
-		acknowledge[1] = REQ;
-		OutputDebugString("Received mode REQ");
-
 	}
 	else if (wpData->status == IDLE) {
 		acknowledge[1] = ACK;
@@ -649,6 +647,9 @@ int sendAcknowledgment(char control) {
 	}
 	WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol);
 	OutputDebugString("sent ACK or REQ");
+	_stprintf_s(buf, _T("%d"), ++wpData->countAckSend);
+	updateStats((LPSTR)buf, 11);
+
 	return 0;
 }
 
