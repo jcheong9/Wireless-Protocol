@@ -82,28 +82,6 @@ int ConfigPort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	return 0;
 }
 
-void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd) {
-	DWORD threadSendId;
-	DWORD threadReceiveId;
-	if (wpData->connected == false) {
-		wpData->connected = true;
-		if (receiveThread == NULL && sendThread == NULL) {
-			sendThread = CreateThread(NULL, 0, ThreadSendProc, &wpData, 0, &threadSendId);
-			receiveThread = CreateThread(NULL, 0, ThreadReceiveProc, &wpData, 0, &threadReceiveId);
-		}
-		setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
-		setMenuButton(hwnd, IDM_DISCONNECT, MF_ENABLED);
-	}
-}
-
-void Disconnect(HWND hwnd) {
-	if (wpData->connected == true) {
-		wpData->connected = false;
-		setMenuButton(hwnd, IDM_DISCONNECT, MF_GRAYED);
-		setMenuButton(hwnd, IDM_CONNECT, MF_ENABLED);
-	}
-}
-
 
 
 

@@ -271,8 +271,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	LPCSTR portNumber = (LPCSTR)"COM1";
 
 
-
-
 	switch (Message)
 	{
 	case WM_COMMAND:
@@ -322,17 +320,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 					vector<char*> a = dataLink->uploadedFrames;
 					int b = a.size();
 				}
-				//if you want to test check frame function, uncomment the codes below
-				//else {
-				//	dataLink->incomingFrames.push_back(dataLink->uploadedFrames.at(0));
-				//	checkFrame();
-				//}
 			}
 			else {
 				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);
 			}
 
-			//MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
 
 		case IDM_DISCONNECT:
