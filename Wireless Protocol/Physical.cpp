@@ -314,7 +314,6 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 DWORD WINAPI ThreadSendProc(LPVOID n) {
 	OVERLAPPED o1{ 0 };
 	DWORD CommEvent{ 0 };
-	int framePointIndexlocal = wpData->framePointIndex;
 	char frameEOT[2] = { 0x00 , EOT };
 	char frameREQ[2] = { 0 , REQ };
 	int countErrorAck = 0;
@@ -327,11 +326,11 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			//framePter = dataLink->uploadedFrames.at(framePointIndex);
 			failedSending = true;
 			while (failedSending) {
-				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[framePointIndexlocal], 1024)) {
+				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[wpData->framePointIndex], 1024)) {
 					if (waitACK()) {
 						failedSending =false;
 						countErrorAck = 0;
-						framePointIndexlocal++;
+						wpData->framePointIndex++;
 						checkREQ();
 					}
 					else {
@@ -349,8 +348,8 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				}
 			}
 			PurgeComm(wpData->hComm,PURGE_TXCLEAR);
-			if (framePointIndexlocal == dataLink->uploadedFrames.size()) {
-				framePointIndexlocal = 0;
+			if (wpData->framePointIndex == dataLink->uploadedFrames.size()) {
+				wpData->framePointIndex = 0;
 				wpData->fileUploaded = false;
 				sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT));
 				WaitForSingleObject(eotEvent, 3000);
