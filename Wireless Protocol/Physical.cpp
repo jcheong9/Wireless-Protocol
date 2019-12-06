@@ -39,7 +39,7 @@ int REQCounter = 0;
 --
 -- DATE: November29, 2019
 --
--- REVISIONS: 
+-- REVISIONS:
 --
 -- DESIGNER: Amir Kbah
 --
@@ -83,8 +83,11 @@ int Bid() {
 			wpData->sentdEnq = false;
 			randomizedTO = randomizeTimeOut(500, 5000);
 			OutputDebugString(_T("Timeout Bidding ENQ"));
-			WaitForSingleObject(enqEvent, randomizedTO);
-			ResetEvent(enqEvent);
+
+			if (WaitForSingleObject(enqEvent, randomizedTO) == WAIT_OBJECT_0) {
+				wpData->status = IDLE;
+				ResetEvent(enqEvent);
+			}
 		}
 	}
 
@@ -178,7 +181,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	DWORD CommEvent{ 0 };
 	OVERLAPPED o1{ 0 };
 
-	if (frame[1] == EOT) {
+	if (frame[1] == EOT) {		
 		OutputDebugString("Sending an EOT from sendFrame");
 	}
 
@@ -368,11 +371,12 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						_stprintf_s(buf, _T("%d"), ++wpData->framesResent);
 						updateStats((LPSTR)buf, 13);
 						if (countErrorAck >= 3) {
+							wpData->status = IDLE;
 							failedSending = false;
+							wpData->sentdEnq = false;
 							errorAck = true;
 							OutputDebugString("\n......Goes to IDLE when 3 errors.....\n");
-							wpData->status = IDLE;
-						}
+\						}
 					}
 				}
 			}
@@ -388,9 +392,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					OutputDebugString(_T("\n......END frame.....\n"));
 				}
 			}
-			/*if (framePointIndex < dataLink->uploadedFrames.size() -1) {
-			}*/
-
 		}
 		else if(wpData->status == IDLE && wpData->fileUploaded){	
 			Bid();
@@ -492,10 +493,9 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						OutputDebugString("Received 2 chars in IDLE state BUT I SENT ENQ!");
 						//SetEvent(enqEvent);
 						if (controlBuffer[1] == ACK || controlBuffer[1] == REQ) {
-							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
+							SetEvent(ackEvent);
 							OutputDebugString("Received ACK from IDLE state");
-
 							if (controlBuffer[1] == ACK ) {
 								_stprintf_s(buf, _T("%d"), ++wpData->countAckReceive);
 								updateStats((LPSTR)buf, 21);

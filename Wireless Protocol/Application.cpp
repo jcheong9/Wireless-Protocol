@@ -184,7 +184,6 @@ void printToWindowsNew(char* str, int window)
 		for (int i = 2; i < 1018; ++i) {
 			incomingBuffer[i-2] = str[i];
 		}
-
 		incomingBuffer[1018] = '\0';
 		// get new length to determine buffer size
 		int newIn = lstrlen(incomingBuffer);
