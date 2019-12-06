@@ -73,7 +73,7 @@ int Bid() {
 		wpData->sentdEnq = true;
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 
-		if (WaitForSingleObject(ackEvent, 1500) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(ackEvent, 2000) == WAIT_OBJECT_0) {
 			wpData->status = SEND_MODE;
 			ResetEvent(ackEvent);
 			OutputDebugString(_T("Setting status to send mode"));
@@ -82,7 +82,7 @@ int Bid() {
 		else {
 			wpData->sentdEnq = false;
 			wpData->status = IDLE;
-			randomizedTO = randomizeTimeOut(500, 1500);
+			randomizedTO = randomizeTimeOut(500, 2000);
 			OutputDebugString(_T("Timeout Bidding ENQ"));
 			WaitForSingleObject(enqEvent, randomizedTO);
 			ResetEvent(enqEvent);
@@ -251,9 +251,9 @@ int checkREQ() {
 	memset(&frameEOT, 0, sizeof(EOT));
 	frameEOT[0] = '\0';
 	frameEOT[1] = EOT;
-	if (wpData->receivedREQ == TRUE && REQCounter < 6) {
+	if (wpData->receivedREQ == TRUE && REQCounter < 3) {
 		REQCounter++;
-		if (REQCounter == 6) {
+		if (REQCounter == 3) {
 			//Send EOT .... need packize eot frame
 			REQCounter = 0;
 			if (sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
@@ -355,7 +355,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					++wpData->countFramesSend;
 					_stprintf_s(buf, _T("%d"), wpData->countFramesSend);
 					updateStats((LPSTR)buf, 10);
-					if (waitACK()) {
+					if (waitACK() || true) {
 						failedSending =false;
 						countErrorAck = 0;
 						wpData->framePointIndex++;
@@ -505,44 +505,40 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 
 				case SEND_MODE:
 					if (!ReadFile(wpData->hComm, controlBuffer, 2, &result, &ol)) {
-						if (GetLastError() != ERROR_IO_PENDING) {
-							fRes = FALSE;
-							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
-						}
-						else {
-							if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
-								fRes = FALSE;
-							}
-							else {
-								fRes = TRUE;
-							}
-						}
+						//if (GetLastError() != ERROR_IO_PENDING) {
+						//	fRes = FALSE;
+						//	PurgeComm(wpData->hComm, PURGE_RXCLEAR);
+						//}
+						//else {
+						//	if (!GetOverlappedResult(wpData->hComm, &ol, &result, TRUE)) {
+						//		fRes = FALSE;
+						//	}
+						//	else {
+						//		fRes = TRUE;
+						//	}
+						//}
 					}
 					else {
 						fRes = TRUE;
 					}
+
 					if (fRes == TRUE && result == 2) {
 						OutputDebugString(_T("\n Received 2 chars in Send state!\n"));
 						control = controlBuffer[1];
-							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ ) { /*&& control == wpData->currentSyncByte) {*/
+							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ ) { 
 								SetEvent(ackEvent);
 								if (control == REQ) {
 									wpData->receivedREQ = true;
 									checkREQ();
-								}
-								if (control == ACK) {
+									++wpData->countReqReceive;
+									_stprintf_s(buf, _T("%d"), wpData->countReqReceive);
+									updateStats((LPSTR)buf, 22);
+								} else if (control == ACK) {
 									OutputDebugString(_T("\nReceived an ACK from sending mode\n"));
 									++wpData->countAckReceive;
 									_stprintf_s(buf, _T("%d"), wpData->countAckReceive);
 									updateStats((LPSTR)buf, 21);
 								}
-								else {
-									OutputDebugString(_T("Received a REQ from sending mode"));
-									++wpData->countReqReceive;
-									_stprintf_s(buf, _T("%d"), wpData->countReqReceive);
-									updateStats((LPSTR)buf, 22);
-								}
-
 							}
 					}
 					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
