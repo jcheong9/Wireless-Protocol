@@ -69,6 +69,7 @@ int Bid() {
 	OutputDebugString(_T("\n......Bidding.....\n"));
 
 	if (wpData->fileUploaded) {
+		PurgeComm(wpData->hComm, PURGE_TXCLEAR);
 		OutputDebugString(_T("\n......Sent ENQ.....\n"));
 		wpData->sentdEnq = true;
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
@@ -81,7 +82,7 @@ int Bid() {
 		//timeout
 		else {
 			wpData->sentdEnq = false;
-			randomizedTO = randomizeTimeOut(500, 5000);
+			randomizedTO = randomizeTimeOut(500, 2500);
 			OutputDebugString(_T("Timeout Bidding ENQ"));
 
 			if (WaitForSingleObject(enqEvent, randomizedTO) == WAIT_OBJECT_0) {
@@ -187,7 +188,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 
 		wpData->sentdEnq = false;
 		wpData->receivedREQ = false;
-		if (WaitForSingleObject(enqEvent, 4000) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(enqEvent, 3000) == WAIT_OBJECT_0) {
 
 			OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
 			ResetEvent(enqEvent);
@@ -409,25 +410,27 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			Bid();
 		}
 		else if (wpData->status == RECEIVE_MODE) {
-			if(WaitForSingleObject(GOOD_FRAME_EVENT, 4500) == WAIT_OBJECT_0) {
+			if (WaitForSingleObject(GOOD_FRAME_EVENT, 4500) == WAIT_OBJECT_0) {
 				ResetEvent(GOOD_FRAME_EVENT);
-				char frameACK[2];
-				frameACK[0] = wpData->currentSyncByte;
-				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
+				if (wpData->status == RECEIVE_MODE) {
+					char frameACK[2];
+					frameACK[0] = wpData->currentSyncByte;
+					frameACK[1] = wpData->fileUploaded ? REQ : ACK;
 
-				sendFrame(wpData->hComm, frameACK, 2);
+					sendFrame(wpData->hComm, frameACK, 2);
 
-				if (frameACK[1] == REQ) {
-					OutputDebugString("Sent an REQ from receiving mode!");
-					++wpData->countReqSend;
-					_stprintf_s(buf, _T("%d"), wpData->countReqSend);
-					updateStats((LPSTR)buf, 12);
-				}
-				else {
-					OutputDebugString("Sent an ACK from receiving mode!");
-					++wpData->countAckSend;
-					_stprintf_s(buf, _T("%d"), wpData->countAckSend);
-					updateStats((LPSTR)buf, 11);
+					if (frameACK[1] == REQ) {
+						OutputDebugString("Sent an REQ from receiving mode!");
+						++wpData->countReqSend;
+						_stprintf_s(buf, _T("%d"), wpData->countReqSend);
+						updateStats((LPSTR)buf, 12);
+					}
+					else {
+						OutputDebugString("Sent an ACK from receiving mode!");
+						++wpData->countAckSend;
+						_stprintf_s(buf, _T("%d"), wpData->countAckSend);
+						updateStats((LPSTR)buf, 11);
+					}
 				}
 			}
 			else {
@@ -438,7 +441,6 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 		}
 		//OutputDebugString(_T("\n......Running Send thread.....\n"));
 	}
-
 	return 1;
 }
 
@@ -571,6 +573,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {	
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
+							SetEvent(GOOD_FRAME_EVENT);
 							OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
 							break;
 						} else if (GetLastError() != ERROR_IO_PENDING) {
@@ -589,6 +592,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					else {
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
+							SetEvent(GOOD_FRAME_EVENT);
 							OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
 							break;
 						}
