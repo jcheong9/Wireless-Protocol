@@ -9,20 +9,18 @@ HDC hdc;
 PAINTSTRUCT paintstruct;
 OVERLAPPED o1 = { 0 };
 /*------------------------------------------------------------------------------------------------------------------
--- SOURCE FILE: Session.c - A Windows application that will act as a dumb terminal
+-- SOURCE FILE: Session.c - A Windows application that will act as a Wireless Protocol
 -- that writes to a serial port and reads from a serial port and displays it on the screen
 --
--- PROGRAM: Dumb Terminal
+-- PROGRAM: Wireless Protocol
 --
 -- FUNCTIONS:
--- void ConfigurePort(HWND hwnd, HANDLE hComm, LPCWSTR lpszCommName)
--- LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
+-- int ConfigPort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName);
+-- boolean addFile(OPENFILENAME &ofn);
+-- void prepareTransmission();
 --			
 --
---
---
---
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
@@ -32,6 +30,25 @@ OVERLAPPED o1 = { 0 };
 --
 -- NOTES:
 -- 
+----------------------------------------------------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: addFile
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: void ConfigurePort(OPENFILENAME &ofn)
+--			  OPENFILENAME &ofn - A pointer to the file path for the file to be opened
+-- RETURNS: boolean
+--
+-- NOTES:
+--
 ----------------------------------------------------------------------------------------------------------------------*/
 
 boolean addFile(OPENFILENAME &ofn) {
@@ -52,7 +69,7 @@ boolean addFile(OPENFILENAME &ofn) {
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: ConfigurePort
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
@@ -70,7 +87,6 @@ boolean addFile(OPENFILENAME &ofn) {
 -- 
 ----------------------------------------------------------------------------------------------------------------------*/
 
-
 int ConfigPort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	COMMCONFIG cc;
 	cc.dwSize = sizeof(COMMCONFIG);
@@ -82,6 +98,28 @@ int ConfigPort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName) {
 	}
 	return 0;
 }
+
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Connect
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- INTERFACE: void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd)
+--				HWND receiveThread: Handle to the receiving thread
+--				HANDLE sendThread: Handle to the serial port to configure
+--				HWND hwnd: handle to the application window
+-- RETURNS: void
+--
+-- NOTES: Creates the threads, changes the UI to signiffy that the application is now in Connect Mode
+--
+----------------------------------------------------------------------------------------------------------------------*/
 
 void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd) {
 	DWORD threadSendId;
@@ -97,6 +135,26 @@ void Connect(HANDLE receiveThread, HANDLE sendThread, HWND hwnd) {
 	}
 }
 
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Disconnect
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- INTERFACE: void Disconnect(HWND hwnd) 
+--			  HWND hwnd: handle to the application window
+--
+-- RETURNS: void
+--
+-- NOTES: Kills the threads, changes the UI to signiffy that the application is now in disconnected
+--
+----------------------------------------------------------------------------------------------------------------------*/
 void Disconnect(HWND hwnd) {
 	if (wpData->connected == true) {
 		wpData->connected = false;

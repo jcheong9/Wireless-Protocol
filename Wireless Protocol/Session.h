@@ -7,5 +7,4 @@
 
 int ConfigPort(HWND hwnd, HANDLE hComm, LPCSTR lpszCommName);
 boolean addFile(OPENFILENAME &ofn);
-void prepareTransmission();
 #endif

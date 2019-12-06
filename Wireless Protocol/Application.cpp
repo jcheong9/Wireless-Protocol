@@ -3,6 +3,41 @@
 #include <stdio.h>
 #pragma warning (disable: 4096)
 
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: Application.cpp - An application that will act as a Wireless Protocol interface for half duplex links
+-- Provides a high-level GUI with menu buttons for users to access and use communication functions
+--
+--
+-- PROGRAM: Wireless Protocol
+--
+-- FUNCTIONS:
+--				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
+--				LPSTR lspszCmdParam, int nCmdShow)
+--				void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
+--				void ToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
+--				LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
+--				void printToWindowsNew(char* str, int window);
+--				BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName);
+--				void addColumns(HWND hwndLV, LVITEM* lvItem);
+--				void updateStats(LPSTR newValue, int rowPosition);
+--				void prepWindow(HINSTANCE hInst);
+--				void updateStats(LPSTR newValue, int rowPosition);
+
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah, Tommy Chang
+--
+-- PROGRAMMER: Amir Kbah, Tommy Chang
+--
+-- NOTES:
+-- Displays Menu items to configure port settings, enter connect mode,
+-- Opens a file upload dialog, populates the screen with the required UI components 
+-- such as network traffic stats for the sending and receiving sides
+----------------------------------------------------------------------------------------------------------------------*/
+
 static HWND hList = NULL;  // List View identifier
 LVCOLUMN LvCol;
 LVITEM LvItem;
@@ -27,41 +62,15 @@ char* buffNewText;
 char* newBuffer;
 
 /*------------------------------------------------------------------------------------------------------------------
--- SOURCE FILE: Application.c - An application that will act as a dumb terminal
--- Provides a high-level GUI with menu buttons for users to access and use communication functions
---
---
--- PROGRAM: Dumb Terminal
---
--- FUNCTIONS:
---				int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
---				LPSTR lspszCmdParam, int nCmdShow)
---				void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
---				void `ToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
---
--- DATE: September 30, 2019
---
--- REVISIONS: none
---
--- DESIGNER: Tommy Chang
---
--- PROGRAMMER: Tommy Chang
---
--- NOTES:
--- Displays Menu items to configure port settings, enter connect mode,
--- view a help message, and exit the application.
-----------------------------------------------------------------------------------------------------------------------*/
-
-/*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WinMain
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Amir Kbah, Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Amir Kbah, Tommy Chang
 --
 -- INTERFACE: int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow)
@@ -75,7 +84,7 @@ char* newBuffer;
 --
 -- NOTES:
 -- This is the user-provided entry point for a graphical Windows-based application
--- Registers the Windows Class and displays the Window
+-- Registers the Windows Class and displays the Window and its components
 ----------------------------------------------------------------------------------------------------------------------*/
 
 Data* wpData = new Data();
@@ -133,13 +142,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: setMenuButton
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Amir Kbah, Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Amir Kbah, Tommy Chang
 --
 -- INTERFACE: void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
 --					HWND hwnd - handle to the window
@@ -158,73 +167,79 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 }
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: printToWindow
+-- FUNCTION: printToWindowsNew
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Amir Kbah
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Amir Kbah
 --
--- INTERFACE: void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
---				HWND hwnd: Dandle to the window
---				HDC hdc: Device Context of the hwnd
---				char* str: Buffer to be written to the window
---				unsigned int* x: Location of the x-coordinate to write the buffer to the window
---				unsigned int* y: Location of the x-coordinate to write the buffer to the window
+-- INTERFACE: void printToWindowsNew(char* str)
+--				
 -- RETURNS: void
 --
 -- NOTES:
--- This function prints the character stored in the str buffer to a particular x and y coordinate of the window.
+-- This function prints the characters stored in the str buffer to athe corresponding window.
+-- The top half include a Send box that displays the sent characters and the right side of it displays the sending
+-- outgoing traffic details
+-- The bottom half include a Receive box that displays the received characters and the right side of it displays the receiving
+-- incoming traffic details
 ----------------------------------------------------------------------------------------------------------------------*/
 
-
-void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
+void printToWindowsNew(char* str, int window)
 {
 
-	TextOut(wpData->hdc, *x, *y, str, strlen(str));
-	SIZE size;
-	TEXTMETRIC tm;
-	GetTextMetrics(wpData->hdc, &tm);
-	GetTextExtentPoint32(wpData->hdc, str, strlen(str), &size);
-	*x += size.cx; // increment the screen x-coordinate
-	if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
-		*x = 0;
-		*y = *y + tm.tmHeight + tm.tmExternalLeading;
+	char incomingBuffer[1019];
+	if (window == 0) {
+		for (int i = 2; i < 1018; ++i) {
+			incomingBuffer[i-2] = str[i];
+		}
+		incomingBuffer[1018] = '\0';
+		// get new length to determine buffer size
+		int newIn = lstrlen(incomingBuffer);
+		int newLength = GetWindowTextLength(textHwnd) + lstrlen(incomingBuffer) + 2;
+		// create buffer to hold current and new text
+		TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
+		int newbuf = lstrlen(newBuffer);
+		if (!newBuffer) return;
+
+		// get existing text from edit control and put into buffer
+		GetWindowText(textHwnd, newBuffer, newLength);
+		int size = sizeof(newBuffer);
+		// append the newText to the buffer
+		_tcscat_s(newBuffer, newLength, incomingBuffer);
+		//newBuffer[newLength - 1] = '\0';
+		int bufleng = sizeof(newBuffer);
+		// Set the text in the edit control
+		SetWindowText(textHwnd, newBuffer);
 	}
-	ReleaseDC(wpData->hwnd, wpData->hdc);
-}
+	else {
+		for (int i = 2; i < 1018; ++i) {
+			incomingBuffer[i - 2] = str[i];
+		}
 
-//This takes whole chunks of chars (char*) and appends them to the screen.
-void printToWindowsNew(char* str)
-{
-	char incomingBuffer[1024];
+		incomingBuffer[1018] = '\0';
+		// get new length to determine buffer size
+		int newIn = lstrlen(incomingBuffer);
+		int newLength = GetWindowTextLength(textHwndRx) + lstrlen(incomingBuffer) + 2;
+		// create buffer to hold current and new text
+		TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
+		int newbuf = lstrlen(newBuffer);
+		if (!newBuffer) return;
 
-	for (int i = 0; i < 1023; ++i) {
-		incomingBuffer[i] = str[i];
+		// get existing text from edit control and put into buffer
+		GetWindowText(textHwndRx, newBuffer, newLength);
+		int size = sizeof(newBuffer);
+		// append the newText to the buffer
+		_tcscat_s(newBuffer, newLength, incomingBuffer);
+		//newBuffer[newLength - 1] = '\0';
+		int bufleng = sizeof(newBuffer);
+		// Set the text in the edit control
+		SetWindowText(textHwndRx, newBuffer);
 	}
-	incomingBuffer[1023] = '\0';
-	// get new length to determine buffer size
-	int newIn = lstrlen(incomingBuffer);
-	int newLength = GetWindowTextLength(textHwndRx) + lstrlen(incomingBuffer) + 2;
-	
-	// create buffer to hold current and new text
-	TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
-	int newbuf = lstrlen(newBuffer);
-
-	if (!newBuffer) return;
-
-	// get existing text from edit control and put into buffer
-	GetWindowText(textHwndRx, newBuffer, newLength);
-	int size = sizeof(newBuffer);
-	// append the newText to the buffer
-	_tcscat_s(newBuffer, newLength, incomingBuffer);
-	//newBuffer[newLength - 1] = '\0';
-	int bufleng = sizeof(newBuffer);
-	// Set the text in the edit control
-	SetWindowText(textHwndRx, newBuffer);
 
 	// free the buffer
 	GlobalFree(newBuffer);
@@ -234,13 +249,13 @@ void printToWindowsNew(char* str)
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WndProc
 --
--- DATE: September 30, 2019
+-- DATE: 5 December, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Amir Kbah, Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Amir, Kbah Tommy Chang
 --
 -- INTERFACE: LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 --				HWND hwnd: Handle to the window
@@ -266,9 +281,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	HANDLE readThread = NULL;
 	DWORD threadId;
 	LPCSTR portNumber = (LPCSTR)"COM1";
-
-
-
 
 	switch (Message)
 	{
@@ -319,31 +331,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 					vector<char*> a = dataLink->uploadedFrames;
 					int b = a.size();
 				}
-				//if you want to test check frame function, uncomment the codes below
-				//else {
-				//	dataLink->incomingFrames.push_back(dataLink->uploadedFrames.at(0));
-				//	checkFrame();
-				//}
 			}
 			else {
 				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);
 			}
 
-			//MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
 
 		case IDM_DISCONNECT:
 			wpData->connected = false;
 			wpData->fileUploaded = false;
 			wpData->status = COMMAND_MODE;
+			wpData->status = false;
+			wpData->receivedREQ = FALSE;
 			setMenuButton(wpData->hwnd, IDM_CONNECT, MF_ENABLED);
 			setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 			break;
 
 		case IDM_HELP:
-			//MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
-			//TEXT("Help"), MB_OK);
-			printToWindowsNew((char*)"Two before narrow not relied how except moment myself. Dejection assurance mrs led certainly. So gate at no only none open. Betrayed at properly it of graceful on. Dinner abroad am depart ye turned hearts as me wished. Therefore allowance too perfectly gentleman supposing man his now. Families goodness all eat out bed steepest servants. Explained the incommode sir improving northward immediate eat. Man denoting received you sex possible you. Shew park own loud son door less yet.");
+			//TODO
+			MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
+			TEXT("Help"), MB_OK);
 			break;
 
 		case IDM_EXIT:
@@ -353,21 +361,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			PostQuitMessage(0);
 		}
 		break;
-	case WM_CHAR:
-		if (!wpData->connected) {
-			break;
-		}
-		if (wParam == VK_ESCAPE) {
-			MessageBox(NULL, TEXT("You have been disconnected!"), TEXT(""), MB_OK);
-			wpData->connected = false;
-			CloseHandle(wpData->hComm);
-			wpData->hComm = NULL;
-			setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
-			DrawMenuBar(hwnd);
-			break;
-		}
-		//Write(wpData->hComm, wParam);
-		break;
 
 	case WM_PAINT:		// Process a repaint message
 		hdc = BeginPaint(hwnd, &paintstruct); // Acquire DC
@@ -376,9 +369,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DESTROY:	// Terminate program
+
 		if (wpData->hComm) {
 			CloseHandle(wpData->hComm);
-			delete wpData;
+			//delete wpData;
 		}
 		PostQuitMessage(0);
 		break;
@@ -387,7 +381,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	}
 	return 0;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: InitListViewColumns
+--
+-- DATE: December 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName)
+--				HWND hWndListView : window handle for list view
+--				LVCOLUMN cl : This is a structure that contains information about a column in report view.
+--
+-- RETURNS: BOOL
+--
+-- NOTES:
+-- This function initialize a column to divide window into multiple sections to display control character stat information and network traffic
+----------------------------------------------------------------------------------------------------------------------*/
 BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName)
 {
 	char szText[256];     // Temporary buffer.
@@ -423,7 +436,24 @@ BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* 
 
 	return TRUE;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: addColumns
+--
+-- DATE: December 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: void addColumns(HWND hwndLV, LVITEM* lvItem)
+--			LVITEM lvItem : specifies or receives the attrivutes of a list-view item.
+-- RETURNS: void
+--
+-- NOTES:
+-- This function specifies the attrubute of lvitem and insert it into list view for stat section.
+----------------------------------------------------------------------------------------------------------------------*/
 void addColumns(HWND hwndLV, LVITEM* lvItem) {
 	LVITEM lvI;
 
@@ -435,7 +465,7 @@ void addColumns(HWND hwndLV, LVITEM* lvItem) {
 	lvI.state = 0;
 
 	// Initialize LVITEM members that are different for each item.
-	for (int index = 0; index < 3; index++)
+	for (int index = 0; index < 4; index++)
 	{
 		lvI.iItem = index;
 		lvI.iImage = index;
@@ -447,13 +477,39 @@ void addColumns(HWND hwndLV, LVITEM* lvItem) {
 	lvItem = &lvI;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: prepWindow
+--
+-- DATE: December 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: void prepWindow(HINSTANCE hInst)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function prepare the window with multiple sections that display different information for send and receive characters.
+-- Send section displays the frame that are sent and receive section displays the frames that are received.
+-- Main purpose is to populate the main window with all the required UI components
+----------------------------------------------------------------------------------------------------------------------*/
+
 void prepWindow(HINSTANCE hInst) {
 	/*
 	Send section
 	*/
-	textHwnd = CreateWindow("EDIT", "Send",
+
+	HWND textHwndLabel = CreateWindow("STATIC", "Send",
+		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_READONLY,
+		0, 0, 900, 20, wpData->hwnd, NULL, hInst, NULL);
+
+	textHwnd = CreateWindow("EDIT", "",
 		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_MULTILINE | WS_VSCROLL | ES_READONLY,
-		0, 0, 900, 390, wpData->hwnd, NULL, hInst, NULL);
+		0, 20, 900, 370, wpData->hwnd, NULL, hInst, NULL);
 
 	//Send stats table
 	hWndListView = CreateWindow(WC_LISTVIEW, (LPCSTR)L"", WS_CHILD | LVS_REPORT | LVS_EDITLABELS | WS_VISIBLE,
@@ -464,9 +520,15 @@ void prepWindow(HINSTANCE hInst) {
 	LVITEM* lv = new LVITEM();
 	addColumns(hWndListView, lv);
 
-	ListView_SetItemText(hWndListView, 0, 0, (LPSTR)"Number of Frames");
-	ListView_SetItemText(hWndListView, 1, 0, (LPSTR)"Number of ACKs");
-	ListView_SetItemText(hWndListView, 2, 0, (LPSTR)"Number of REQs");
+	TCHAR buf[3];
+	TCHAR bufACK[3];
+	TCHAR bufREQ[3];
+
+
+	ListView_SetItemText(hWndListView, 0, 0, (LPSTR)"Frames Sent");
+	ListView_SetItemText(hWndListView, 1, 0, (LPSTR)"ACKs Sent");
+	ListView_SetItemText(hWndListView, 2, 0, (LPSTR)"REQs Sent");
+	ListView_SetItemText(hWndListView, 3, 0, (LPSTR)"Resent Frames");
 
 	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Statistics");
 
@@ -474,13 +536,19 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListView, 3, 1, (LPSTR)"0");
 
 	/*
 	Receive section
 	*/
-	textHwndRx = CreateWindow("EDIT", "Receive",
+
+	HWND textHwndRxLabel = CreateWindow("STATIC", "Receive",
+		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_READONLY,
+		0, 400, 900, 20, wpData->hwnd, NULL, hInst, NULL);
+
+	textHwndRx = CreateWindow("EDIT", "",
 		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_MULTILINE | WS_VSCROLL | ES_READONLY,
-		0, 400, 900, 390, wpData->hwnd, NULL, hInst, NULL);
+		0, 420, 900, 370, wpData->hwnd, NULL, hInst, NULL);
 
 	//Receive stats table
 	hWndListViewRx = CreateWindow(WC_LISTVIEW, (LPCSTR)L"", WS_CHILD | LVS_REPORT | LVS_EDITLABELS | WS_VISIBLE,
@@ -489,27 +557,55 @@ void prepWindow(HINSTANCE hInst) {
 	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Criteria");
 
 	addColumns(hWndListViewRx, lv);
-	ListView_SetItemText(hWndListViewRx, 0, 0, (LPSTR)"Number of Frames");
-	ListView_SetItemText(hWndListViewRx, 1, 0, (LPSTR)"Number of ACKs");
-	ListView_SetItemText(hWndListViewRx, 2, 0, (LPSTR)"Number of REQs");
+	ListView_SetItemText(hWndListViewRx, 0, 0, (LPSTR)"Frames Received");
+	ListView_SetItemText(hWndListViewRx, 1, 0, (LPSTR)"ACKs Received");
+	ListView_SetItemText(hWndListViewRx, 2, 0, (LPSTR)"REQs Received");
+	ListView_SetItemText(hWndListViewRx, 3, 0, (LPSTR)"Bad frames received");
+
+	_stprintf_s(buf, _T("%d"), wpData->countFramesReceive);
+	_stprintf_s(bufACK, _T("%d"), wpData->countAckReceive);
+	_stprintf_s(bufREQ, _T("%d"), wpData->countReqReceive);
 
 	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Statistics");
 	ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListViewRx, 1, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListViewRx, 3, 1, (LPSTR)"0");
 }
 
-void updateStats(unsigned long newValue, int rowPosition) {
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: updateStats
+--
+-- DATE: December 3, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Amir Kbah
+--
+-- PROGRAMMER: Amir Kbah
+--
+-- INTERFACE: void updateStats(LPSTR newValue, int rowPosition)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function updates the statistics for control characters.
+----------------------------------------------------------------------------------------------------------------------*/
+
+void updateStats(LPSTR newValue, int rowPosition) {
 	switch (rowPosition) {
 	case (10):
 		ListView_SetItemText(hWndListView, 0, 1, (LPSTR)newValue);
 		break;
 	case (11):
 		ListView_SetItemText(hWndListView, 1, 1, (LPSTR)newValue);
-
 		break;
 	case (12):
 		ListView_SetItemText(hWndListView, 2, 1, (LPSTR)newValue);
+		break;
+	case (13):
+		ListView_SetItemText(hWndListView, 3, 1, (LPSTR)newValue);
 		break;
 	case (20):
 		ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)newValue);
@@ -519,6 +615,9 @@ void updateStats(unsigned long newValue, int rowPosition) {
 		break;
 	case (22):
 		ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)newValue);
+		break;
+	case (23):
+		ListView_SetItemText(hWndListViewRx, 3, 1, (LPSTR)newValue);
 		break;
 	}
 }

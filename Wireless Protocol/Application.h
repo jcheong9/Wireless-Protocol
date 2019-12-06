@@ -24,6 +24,17 @@ struct Data {
 	bool sentdEnq;
 	char currentSyncByte = 0;
 	int framePointIndex = 0;
+
+	int countAckReceive = 0;
+	int countFramesReceive = 0;
+	int countReqReceive = 0;
+	int framesResent = 0;
+
+	int countAckSend = 0;
+	int countFramesSend = 0;
+	int countReqSend = 0;
+	int badFrames = 0;
+
 	HWND labels;
 };
 extern Data* wpData;
@@ -32,12 +43,12 @@ extern Data* wpData;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable);
-void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y);
-void printToWindowsNew(char str[]);
+void printToWindowsNew(char* str, int window);
 BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName);
 void addColumns(HWND hwndLV, LVITEM* lvItem);
-
+void updateStats(LPSTR newValue, int rowPosition);
 void prepWindow(HINSTANCE hInst);
+void updateStats(LPSTR newValue, int rowPosition);
 
 
 
