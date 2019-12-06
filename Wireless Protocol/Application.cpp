@@ -550,9 +550,9 @@ void prepWindow(HINSTANCE hInst) {
 	TCHAR bufREQ[3];
 
 
-	ListView_SetItemText(hWndListView, 0, 0, (LPSTR)"Number of Frames");
-	ListView_SetItemText(hWndListView, 1, 0, (LPSTR)"Number of ACKs");
-	ListView_SetItemText(hWndListView, 2, 0, (LPSTR)"Number of REQs");
+	ListView_SetItemText(hWndListView, 0, 0, (LPSTR)"Frames Sent");
+	ListView_SetItemText(hWndListView, 1, 0, (LPSTR)"ACKs Sent");
+	ListView_SetItemText(hWndListView, 2, 0, (LPSTR)"REQs Sent");
 
 	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Statistics");
 
@@ -575,9 +575,9 @@ void prepWindow(HINSTANCE hInst) {
 	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Criteria");
 
 	addColumns(hWndListViewRx, lv);
-	ListView_SetItemText(hWndListViewRx, 0, 0, (LPSTR)"Number of Frames");
-	ListView_SetItemText(hWndListViewRx, 1, 0, (LPSTR)"Number of ACKs");
-	ListView_SetItemText(hWndListViewRx, 2, 0, (LPSTR)"Number of REQs");
+	ListView_SetItemText(hWndListViewRx, 0, 0, (LPSTR)"Frames Received");
+	ListView_SetItemText(hWndListViewRx, 1, 0, (LPSTR)"ACKs Received");
+	ListView_SetItemText(hWndListViewRx, 2, 0, (LPSTR)"REQs Received");
 
 	_stprintf_s(buf, _T("%d"), wpData->countFramesReceive);
 	_stprintf_s(bufACK, _T("%d"), wpData->countAckReceive);

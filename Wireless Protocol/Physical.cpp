@@ -474,7 +474,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
 						OutputDebugString("Received 2 chars in IDLE state!");
 						if (controlBuffer[1] == ENQ) {
-							SetEvent(enqEvent);
+							//SetEvent(enqEvent);
 							control = controlBuffer[0];
 							sendAcknowledgment(control);
 							wpData->status = RECEIVE_MODE;
@@ -482,7 +482,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						}
 					}
 					else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars in IDLE state!");
+						OutputDebugString("Received 2 chars in IDLE state BUT I SENT ENQ!");
 						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
