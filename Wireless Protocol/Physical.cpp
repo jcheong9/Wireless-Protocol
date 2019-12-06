@@ -320,6 +320,8 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 	int vectorSize = dataLink->uploadedFrames.size();
 	bool errorAck = false;
 	bool failedSending = true;
+	TCHAR buf[1024];
+
 	while (wpData->connected == true) {
 
 		if (wpData->status == SEND_MODE && wpData->fileUploaded) {
@@ -327,6 +329,9 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			failedSending = true;
 			while (failedSending) {
 				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[wpData->framePointIndex], 1024)) {
+					++wpData->countFramesSend;
+					_stprintf(buf, _T("%d"), wpData->countFramesSend);
+					updateStats((LPSTR)buf, 10);
 					if (waitACK()) {
 						failedSending =false;
 						countErrorAck = 0;
@@ -376,9 +381,15 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				sendFrame(wpData->hComm, frameACK, 2);
 				if (frameACK[1] == REQ) {
 					OutputDebugString("Sent an REQ from receiving mode!");
+					++wpData->countReqSend;
+					_stprintf(buf, _T("%d"), wpData->countReqSend);
+					updateStats((LPSTR)buf, 12);
 				}
 				else {
 					OutputDebugString("Sent an ACK from receiving mode!");
+					++wpData->countAckSend;
+					_stprintf(buf, _T("%d"), wpData->countAckSend);
+					updateStats((LPSTR)buf, 11);
 				}
 				ResetEvent(GOOD_FRAME_EVENT);
 			}
@@ -405,6 +416,8 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	DWORD CommEvent{ 0 };
 	DWORD result{ 0 };
 	OVERLAPPED ol{ 0 };
+	TCHAR buf[1024];
+
 	ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (ol.hEvent == NULL) {
 		OutputDebugString("Couldn't create the event");
@@ -454,6 +467,9 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
 							//wpData->status = SEND_MODE;
+							++wpData->countAckReceive;
+							_stprintf(buf, _T("%d"), wpData->countAckReceive);
+							updateStats((LPSTR)buf, 21);
 							OutputDebugString("Received ACK from IDLE state");
 						}
 					}
@@ -484,6 +500,9 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ && control == wpData->currentSyncByte) {
 								SetEvent(ackEvent);
 								OutputDebugString("Received an ACK in Send state!");
+								++wpData->countAckReceive;
+								_stprintf(buf, _T("%d"), wpData->countAckReceive);
+								updateStats((LPSTR)buf, 21);
 								if (control == REQ) {
 									wpData->receivedREQ = true;
 								}
@@ -527,6 +546,9 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 							dataLink->incomingFrames.push_back(frameBuffer);
 							if (checkFrame()) {
 								OutputDebugString("Received 1024 chars in Receive State!");
+								++wpData->countFramesReceive;
+								_stprintf(buf, _T("%d"), wpData->countFramesReceive);
+								updateStats((LPSTR)buf, 20);
 								// check the frame
 								// if good, set the event
 								wpData->currentSyncByte = frameBuffer[0];

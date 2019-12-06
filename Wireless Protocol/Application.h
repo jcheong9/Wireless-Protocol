@@ -45,6 +45,7 @@ BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* 
 void addColumns(HWND hwndLV, LVITEM* lvItem);
 
 void prepWindow(HINSTANCE hInst);
+void updateStats(LPSTR newValue, int rowPosition);
 
 
 

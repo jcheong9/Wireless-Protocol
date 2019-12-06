@@ -117,7 +117,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	setMenuButton(wpData->hwnd, IDM_CONNECT, MF_GRAYED);
 	setMenuButton(wpData->hwnd, IDM_DISCONNECT, MF_GRAYED);
 
+
 	prepWindow(hInst);
+
+
 
 	ShowWindow(wpData->hwnd, nCmdShow);
 	UpdateWindow(wpData->hwnd);
@@ -267,8 +270,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	DWORD threadId;
 	LPCSTR portNumber = (LPCSTR)"COM1";
 
-
-
+	
 
 	switch (Message)
 	{
@@ -482,9 +484,9 @@ void prepWindow(HINSTANCE hInst) {
 	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Statistics");
 
 
-	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)buf);
-	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)bufACK);
-	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)bufREQ);
+	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)"0");
 
 	/*
 	Receive section
@@ -513,7 +515,7 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)bufREQ);
 }
 
-void updateStats(unsigned long newValue, int rowPosition) {
+void updateStats(LPSTR newValue, int rowPosition) {
 	switch (rowPosition) {
 	case (10):
 		ListView_SetItemText(hWndListView, 0, 1, (LPSTR)newValue);
