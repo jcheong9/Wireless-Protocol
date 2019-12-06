@@ -79,6 +79,7 @@ int Bid() {
 		}
 		//timeout
 		else {
+			//wpData->status = IDLE;
 			wpData->sentdEnq = false;
 			randomizedTO = randomizeTimeOut(500, 5000);
 			OutputDebugString(_T("Timeout Bidding ENQ"));
@@ -249,9 +250,9 @@ int checkREQ() {
 	memset(&frameEOT, 0, sizeof(EOT));
 	frameEOT[0] = '\0';
 	frameEOT[1] = EOT;
-	if (wpData->receivedREQ == TRUE && REQCounter < 6) {
+	if (wpData->receivedREQ == true && REQCounter < 3) {
 		REQCounter++;
-		if (REQCounter == 6) {
+		if (REQCounter == 3) {
 			//To do sent EOT .... need packize eot frame
 			REQCounter = 0;
 			if (sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
@@ -260,7 +261,10 @@ int checkREQ() {
 			}
 
 			wpData->status = IDLE;
-			wpData->receivedREQ = FALSE;
+			wpData->receivedREQ = false;
+			wpData->sentdEnq = false;
+
+
 
 			if (WaitForSingleObject(enqEvent, 2000) == WAIT_OBJECT_0) {
 				wpData->status = RECEIVE_MODE;
