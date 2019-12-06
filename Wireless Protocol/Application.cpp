@@ -182,7 +182,7 @@ void printToWindowsNew(char* str, int window)
 	char incomingBuffer[1019];
 	if (window == 0) {
 		for (int i = 2; i < 1018; ++i) {
-			incomingBuffer[i] = str[i];
+			incomingBuffer[i-2] = str[i];
 		}
 
 		incomingBuffer[1018] = '\0';
@@ -206,7 +206,7 @@ void printToWindowsNew(char* str, int window)
 	}
 	else {
 		for (int i = 2; i < 1018; ++i) {
-			incomingBuffer[i] = str[i];
+			incomingBuffer[i - 2] = str[i];
 		}
 
 		incomingBuffer[1018] = '\0';
@@ -460,7 +460,7 @@ void addColumns(HWND hwndLV, LVITEM* lvItem) {
 	lvI.state = 0;
 
 	// Initialize LVITEM members that are different for each item.
-	for (int index = 0; index < 3; index++)
+	for (int index = 0; index < 4; index++)
 	{
 		lvI.iItem = index;
 		lvI.iImage = index;
@@ -519,6 +519,7 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListView, 0, 0, (LPSTR)"Frames Sent");
 	ListView_SetItemText(hWndListView, 1, 0, (LPSTR)"ACKs Sent");
 	ListView_SetItemText(hWndListView, 2, 0, (LPSTR)"REQs Sent");
+	ListView_SetItemText(hWndListView, 3, 0, (LPSTR)"Resent Frames");
 
 	InitListViewColumns(hWndListView, hInst, lcl, (LPSTR)"Send Statistics");
 
@@ -526,6 +527,7 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListView, 3, 1, (LPSTR)"0");
 
 	/*
 	Receive section
@@ -549,14 +551,17 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListViewRx, 0, 0, (LPSTR)"Frames Received");
 	ListView_SetItemText(hWndListViewRx, 1, 0, (LPSTR)"ACKs Received");
 	ListView_SetItemText(hWndListViewRx, 2, 0, (LPSTR)"REQs Received");
+	ListView_SetItemText(hWndListViewRx, 3, 0, (LPSTR)"Bad frames received");
 
 	_stprintf_s(buf, _T("%d"), wpData->countFramesReceive);
 	_stprintf_s(bufACK, _T("%d"), wpData->countAckReceive);
 	_stprintf_s(bufREQ, _T("%d"), wpData->countReqReceive);
+
 	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Statistics");
 	ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListViewRx, 1, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListViewRx, 3, 1, (LPSTR)"0");
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: updateStats
@@ -583,10 +588,12 @@ void updateStats(LPSTR newValue, int rowPosition) {
 		break;
 	case (11):
 		ListView_SetItemText(hWndListView, 1, 1, (LPSTR)newValue);
-
 		break;
 	case (12):
 		ListView_SetItemText(hWndListView, 2, 1, (LPSTR)newValue);
+		break;
+	case (13):
+		ListView_SetItemText(hWndListView, 3, 1, (LPSTR)newValue);
 		break;
 	case (20):
 		ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)newValue);
@@ -596,6 +603,9 @@ void updateStats(LPSTR newValue, int rowPosition) {
 		break;
 	case (22):
 		ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)newValue);
+		break;
+	case (23):
+		ListView_SetItemText(hWndListViewRx, 3, 1, (LPSTR)newValue);
 		break;
 	}
 }

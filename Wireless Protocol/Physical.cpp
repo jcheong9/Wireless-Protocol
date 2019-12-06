@@ -365,6 +365,8 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						failedSending = true;
 						countErrorAck++;
 						OutputDebugString("\n......Resent frame.....\n");
+						_stprintf_s(buf, _T("%d"), ++wpData->framesResent);
+						updateStats((LPSTR)buf, 13);
 						if (countErrorAck >= 3) {
 							failedSending = false;
 							errorAck = true;
@@ -584,18 +586,19 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						if (frameBuffer[1] == STX) {
 							dataLink->incomingFrames.push_back(frameBuffer);
 							if (checkFrame()) {
+								wpData->currentSyncByte = frameBuffer[0];
+								SetEvent(GOOD_FRAME_EVENT);
+								printToWindowsNew(frameBuffer, 1);
 								OutputDebugString("Received 1024 chars in Receive State!");
 								// check the frame
 								// if good, set the event
 								++wpData->countFramesReceive;
 								_stprintf_s(buf, _T("%d"), wpData->countFramesReceive);
 								updateStats((LPSTR)buf, 20);
-
-								wpData->currentSyncByte = frameBuffer[0];
-								SetEvent(GOOD_FRAME_EVENT);
-								printToWindowsNew(frameBuffer,1);
 							}
 							else {
+								_stprintf_s(buf, _T("%d"), ++wpData->badFrames);
+								updateStats((LPSTR)buf, 23);
 								OutputDebugString(_T("Bad frame, failed checkframe()"));
 							}
 						}

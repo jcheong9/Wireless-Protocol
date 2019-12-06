@@ -28,10 +28,12 @@ struct Data {
 	int countAckReceive = 0;
 	int countFramesReceive = 0;
 	int countReqReceive = 0;
+	int framesResent = 0;
 
 	int countAckSend = 0;
 	int countFramesSend = 0;
 	int countReqSend = 0;
+	int badFrames = 0;
 
 	HWND labels;
 };
