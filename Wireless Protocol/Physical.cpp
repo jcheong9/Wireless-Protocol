@@ -246,8 +246,10 @@ int checkREQ() {
 			//To do sent EOT .... need packize eot frame
 			
 			if (sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
-				OutputDebugString(_T("Sent EOT."));
+				OutputDebugString(_T("Sent EOT due to REQCounter."));
 			}
+			REQCounter = 0;
+			wpData->fileUploaded = FALSE;
 			WaitForSingleObject(eotEvent, 1000);
 			wpData->status = IDLE;
 			wpData->receivedREQ = FALSE;
@@ -353,18 +355,20 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					}
 				}
 			}
-			PurgeComm(wpData->hComm,PURGE_TXCLEAR);
-			if (wpData->framePointIndex == dataLink->uploadedFrames.size()) {
-				wpData->framePointIndex = 0;
-				wpData->fileUploaded = false;
-				sendFrame(wpData->hComm, frameEOT, 1024);
-				wpData->sentdEnq = false;
-				OutputDebugString(_T("\n......END frame.....\n"));
-				wpData->status = IDLE;
-				if (WaitForSingleObject(enqEvent, 3000) == WAIT_OBJECT_0) {
-					ResetEvent(enqEvent);
+			if (wpData->status == SEND_MODE) {
+				PurgeComm(wpData->hComm, PURGE_TXCLEAR);
+				if (wpData->framePointIndex == dataLink->uploadedFrames.size()) {
+					wpData->framePointIndex = 0;
+					wpData->fileUploaded = false;
+					sendFrame(wpData->hComm, frameEOT, 1024);
+					wpData->sentdEnq = false;
+					OutputDebugString(_T("\n......END frame.....\n"));
+					wpData->status = IDLE;
+					if (WaitForSingleObject(enqEvent, 3000) == WAIT_OBJECT_0) {
+						ResetEvent(enqEvent);
+					}
+
 				}
-				
 			}
 			/*if (framePointIndex < dataLink->uploadedFrames.size() -1) {
 			}*/
@@ -460,7 +464,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						OutputDebugString("Received 2 chars in IDLE state!");
 						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
-							//wpData->status = SEND_MODE;
+							wpData->status = SEND_MODE;
 							OutputDebugString("Received ACK from IDLE state");
 						}
 					}
@@ -542,7 +546,6 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 								// if good, set the event
 								wpData->currentSyncByte = frameBuffer[0];
 								SetEvent(GOOD_FRAME_EVENT);
-
 								printToWindowsNew(frameBuffer);
 							}
 						}
