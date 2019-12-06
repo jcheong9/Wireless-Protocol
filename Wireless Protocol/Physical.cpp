@@ -73,7 +73,7 @@ int Bid() {
 		wpData->sentdEnq = true;
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 
-		if (WaitForSingleObject(ackEvent, 2500) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(ackEvent, 1500) == WAIT_OBJECT_0) {
 			wpData->status = SEND_MODE;
 			ResetEvent(ackEvent);
 			OutputDebugString(_T("Setting status to send mode"));
@@ -81,7 +81,8 @@ int Bid() {
 		//timeout
 		else {
 			wpData->sentdEnq = false;
-			randomizedTO = randomizeTimeOut(500, 5000);
+			wpData->status = IDLE;
+			randomizedTO = randomizeTimeOut(500, 1500);
 			OutputDebugString(_T("Timeout Bidding ENQ"));
 			WaitForSingleObject(enqEvent, randomizedTO);
 			ResetEvent(enqEvent);
@@ -253,7 +254,7 @@ int checkREQ() {
 	if (wpData->receivedREQ == TRUE && REQCounter < 6) {
 		REQCounter++;
 		if (REQCounter == 6) {
-			//To do sent EOT .... need packize eot frame
+			//Send EOT .... need packize eot frame
 			REQCounter = 0;
 			if (sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
 				OutputDebugString(_T("Sent EOT due to REQCounter."));
@@ -263,7 +264,7 @@ int checkREQ() {
 			wpData->status = IDLE;
 			wpData->receivedREQ = FALSE;
 
-			if (WaitForSingleObject(enqEvent, 2000) == WAIT_OBJECT_0) {
+			if (WaitForSingleObject(enqEvent, 6000) == WAIT_OBJECT_0) {
 				wpData->status = RECEIVE_MODE;
 				OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
 				ResetEvent(enqEvent);
