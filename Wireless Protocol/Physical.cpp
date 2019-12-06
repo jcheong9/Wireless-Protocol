@@ -257,9 +257,11 @@ int checkREQ() {
 				OutputDebugString(_T("Sent EOT due to REQCounter."));
 				wpData->fileUploaded = false;
 			}
-			WaitForSingleObject(eotEvent, 3000);
 			wpData->status = IDLE;
 			wpData->receivedREQ = FALSE;
+			WaitForSingleObject(enqEvent, 50000);
+			ResetEvent(enqEvent);
+
 			return 1;
 		}
 
