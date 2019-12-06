@@ -453,9 +453,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 							OutputDebugString("Received ACK from IDLE state");
 						}
 					}
-					else {
-						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
-					}
+					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					break;
 
 				case SEND_MODE:
@@ -486,13 +484,8 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 									wpData->receivedREQ = true;
 								}
 							}
-						else {
-							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
-						}
 					}
-					else {
-						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
-					}
+					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					break;
 				case RECEIVE_MODE:
 					if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {
@@ -538,9 +531,6 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 								printToWindowsNew(frameBuffer);
 							}
 						}
-					}
-					else {
-						PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					}
 					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 					break;
