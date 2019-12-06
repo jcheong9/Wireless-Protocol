@@ -13,6 +13,8 @@
 --				DWORD WINAPI Read(LPVOID n)
 --				int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize)
 --				int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead)
+--				int checkREQ()
+--				DWORD WINAPI ThreadSendProc(LPVOID n)
 --
 -- DATE: September 30, 2019
 --
@@ -274,39 +276,6 @@ int checkREQ() {
 			return 1;
 		}
 
-	}
-	return 0;
-}
-
-
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: Read
---
--- DATE: September 30, 2019
---
--- REVISIONS: none
---
--- DESIGNER: Tommy Chang
---
--- PROGRAMMER: Tommy Chang
---
--- INTERFACE: Read(HANDLE hComm, char *str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1)
---
---					HANDLE hComm: handle to the port to read from
---					char *str: buffer to store the character
---					DWORD nNumberofBytesToRead: number of bytes to read
---					LPDWORD lpNumberofBytesRead: number of bytes actually read (NULL)
---					LPOVERLAPPED o1: overlapped structure
---
--- RETURNS: int
---
--- NOTES: Reads nNumberofBytestoRead (currently 1 byte, for one character) from the handle, and stores it in the str buffer.
---
-----------------------------------------------------------------------------------------------------------------------*/
-
-int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1) {
-	if (ReadFile(hComm, str, nNumberofBytesToRead, NULL, o1)) {
-		return 1;
 	}
 	return 0;
 }
@@ -631,7 +600,23 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 
 
 
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendAcknowledgment
+--
+-- DATE: December 6, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER: Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- INTERFACE: int sendAcknowledgment(char control)
+--
+-- RETURNS: int
+--
+-- NOTES: checks status and send coresponding acknowledgments
+----------------------------------------------------------------------------------------------------------------------*/
 int sendAcknowledgment(char control) {
 	OVERLAPPED ol{ 0 };
 	char acknowledge[2];
