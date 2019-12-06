@@ -156,48 +156,9 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 	DrawMenuBar(hwnd);
 }
 
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: printToWindow
---
--- DATE: September 30, 2019
---
--- REVISIONS: none
---
--- DESIGNER: Tommy Chang
---
--- PROGRAMMER: Tommy Chang
---
--- INTERFACE: void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
---				HWND hwnd: Dandle to the window
---				HDC hdc: Device Context of the hwnd
---				char* str: Buffer to be written to the window
---				unsigned int* x: Location of the x-coordinate to write the buffer to the window
---				unsigned int* y: Location of the x-coordinate to write the buffer to the window
--- RETURNS: void
---
--- NOTES:
--- This function prints the character stored in the str buffer to a particular x and y coordinate of the window.
-----------------------------------------------------------------------------------------------------------------------*/
-
-
-void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
-{
-
-	TextOut(wpData->hdc, *x, *y, str, strlen(str));
-	SIZE size;
-	TEXTMETRIC tm;
-	GetTextMetrics(wpData->hdc, &tm);
-	GetTextExtentPoint32(wpData->hdc, str, strlen(str), &size);
-	*x += size.cx; // increment the screen x-coordinate
-	if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
-		*x = 0;
-		*y = *y + tm.tmHeight + tm.tmExternalLeading;
-	}
-	ReleaseDC(wpData->hwnd, wpData->hdc);
-}
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: printToWindow
+-- FUNCTION: printToWindowsNew
 --
 -- DATE: December 5, 2019
 --
@@ -308,8 +269,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	HANDLE readThread = NULL;
 	DWORD threadId;
 	LPCSTR portNumber = (LPCSTR)"COM1";
-
-
 
 
 	switch (Message)
