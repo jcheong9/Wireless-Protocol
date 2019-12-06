@@ -411,23 +411,25 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 		else if (wpData->status == RECEIVE_MODE) {
 			if(WaitForSingleObject(GOOD_FRAME_EVENT, 4500) == WAIT_OBJECT_0) {
 				ResetEvent(GOOD_FRAME_EVENT);
-				char frameACK[2];
-				frameACK[0] = wpData->currentSyncByte;
-				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
+				if (wpData->status == RECEIVE_MODE) {
+					char frameACK[2];
+					frameACK[0] = wpData->currentSyncByte;
+					frameACK[1] = wpData->fileUploaded ? REQ : ACK;
 
-				sendFrame(wpData->hComm, frameACK, 2);
+					sendFrame(wpData->hComm, frameACK, 2);
 
-				if (frameACK[1] == REQ) {
-					OutputDebugString("Sent an REQ from receiving mode!");
-					++wpData->countReqSend;
-					_stprintf_s(buf, _T("%d"), wpData->countReqSend);
-					updateStats((LPSTR)buf, 12);
-				}
-				else {
-					OutputDebugString("Sent an ACK from receiving mode!");
-					++wpData->countAckSend;
-					_stprintf_s(buf, _T("%d"), wpData->countAckSend);
-					updateStats((LPSTR)buf, 11);
+					if (frameACK[1] == REQ) {
+						OutputDebugString("Sent an REQ from receiving mode!");
+						++wpData->countReqSend;
+						_stprintf_s(buf, _T("%d"), wpData->countReqSend);
+						updateStats((LPSTR)buf, 12);
+					}
+					else {
+						OutputDebugString("Sent an ACK from receiving mode!");
+						++wpData->countAckSend;
+						_stprintf_s(buf, _T("%d"), wpData->countAckSend);
+						updateStats((LPSTR)buf, 11);
+					}
 				}
 			}
 			else {
@@ -571,6 +573,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {	
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
+							SetEvent(GOOD_FRAME_EVENT);
 							OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
 							break;
 						} else if (GetLastError() != ERROR_IO_PENDING) {
@@ -589,6 +592,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					else {
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
+							SetEvent(GOOD_FRAME_EVENT);
 							OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
 							break;
 						}
