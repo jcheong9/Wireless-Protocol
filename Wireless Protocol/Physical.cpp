@@ -175,7 +175,9 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	DWORD CommEvent{ 0 };
 	OVERLAPPED o1{ 0 };
 
-	char frame11[FRAME_SIZE];
+	if (frame[1] == EOT) {
+		OutputDebugString("Sending an EOT from sendFrame");
+	}
 
 	//running completing asynchronously return false
 	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
@@ -244,9 +246,10 @@ int checkREQ() {
 		REQCounter++;
 		if (REQCounter == 3) {
 			//To do sent EOT .... need packize eot frame
-			
+			REQCounter = 0;
 			if (sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
 				OutputDebugString(_T("Sent EOT due to REQCounter."));
+				wpData->fileUploaded = false;
 			}
 			REQCounter = 0;
 			wpData->fileUploaded = FALSE;
@@ -491,10 +494,15 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					}
 					if (fRes == TRUE && result == 2) {
 						OutputDebugString("Received 2 chars in Send state!");
-						control = controlBuffer[0];
+						control = controlBuffer[1];
 							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ && control == wpData->currentSyncByte) {
 								SetEvent(ackEvent);
-								OutputDebugString("Received an ACK in Send state!");
+								if (control == ACK) {
+									OutputDebugString("Received an ACK from sending mode");
+								}
+								else {
+									OutputDebugString("Received a REQ frmo sending mode");
+								}
 								if (control == REQ) {
 									wpData->receivedREQ = true;
 								}
