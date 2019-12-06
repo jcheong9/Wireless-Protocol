@@ -216,33 +216,57 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 ----------------------------------------------------------------------------------------------------------------------*/
 
 //This takes whole chunks of chars (char*) and appends them to the screen.
-void printToWindowsNew(char* str)
+void printToWindowsNew(char* str, int window)
 {
-	char incomingBuffer[1024];
+	char incomingBuffer[1022];
+	if (window == 0) {
+		for (int i = 2; i < 1021; ++i) {
+			incomingBuffer[i] = str[i];
+		}
 
-	for (int i = 0; i < 1023; ++i) {
-		incomingBuffer[i] = str[i];
+		incomingBuffer[1021] = '\0';
+		// get new length to determine buffer size
+		int newIn = lstrlen(incomingBuffer);
+		int newLength = GetWindowTextLength(textHwnd) + lstrlen(incomingBuffer) + 2;
+		// create buffer to hold current and new text
+		TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
+		int newbuf = lstrlen(newBuffer);
+		if (!newBuffer) return;
+
+		// get existing text from edit control and put into buffer
+		GetWindowText(textHwnd, newBuffer, newLength);
+		int size = sizeof(newBuffer);
+		// append the newText to the buffer
+		_tcscat_s(newBuffer, newLength, incomingBuffer);
+		//newBuffer[newLength - 1] = '\0';
+		int bufleng = sizeof(newBuffer);
+		// Set the text in the edit control
+		SetWindowText(textHwnd, newBuffer);
 	}
-	incomingBuffer[1023] = '\0';
-	// get new length to determine buffer size
-	int newIn = lstrlen(incomingBuffer);
-	int newLength = GetWindowTextLength(textHwndRx) + lstrlen(incomingBuffer) + 2;
-	
-	// create buffer to hold current and new text
-	TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
-	int newbuf = lstrlen(newBuffer);
+	else {
+		for (int i = 2; i < 1021; ++i) {
+			incomingBuffer[i] = str[i];
+		}
 
-	if (!newBuffer) return;
+		incomingBuffer[1021] = '\0';
+		// get new length to determine buffer size
+		int newIn = lstrlen(incomingBuffer);
+		int newLength = GetWindowTextLength(textHwndRx) + lstrlen(incomingBuffer) + 2;
+		// create buffer to hold current and new text
+		TCHAR* newBuffer = (TCHAR*)GlobalAlloc(GPTR, newLength * sizeof(TCHAR));
+		int newbuf = lstrlen(newBuffer);
+		if (!newBuffer) return;
 
-	// get existing text from edit control and put into buffer
-	GetWindowText(textHwndRx, newBuffer, newLength);
-	int size = sizeof(newBuffer);
-	// append the newText to the buffer
-	_tcscat_s(newBuffer, newLength, incomingBuffer);
-	//newBuffer[newLength - 1] = '\0';
-	int bufleng = sizeof(newBuffer);
-	// Set the text in the edit control
-	SetWindowText(textHwndRx, newBuffer);
+		// get existing text from edit control and put into buffer
+		GetWindowText(textHwndRx, newBuffer, newLength);
+		int size = sizeof(newBuffer);
+		// append the newText to the buffer
+		_tcscat_s(newBuffer, newLength, incomingBuffer);
+		//newBuffer[newLength - 1] = '\0';
+		int bufleng = sizeof(newBuffer);
+		// Set the text in the edit control
+		SetWindowText(textHwndRx, newBuffer);
+	}
 
 	// free the buffer
 	GlobalFree(newBuffer);
@@ -363,7 +387,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		case IDM_HELP:
 			//MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
 			//TEXT("Help"), MB_OK);
-			printToWindowsNew((char*)"Two before narrow not relied how except moment myself. Dejection assurance mrs led certainly. So gate at no only none open. Betrayed at properly it of graceful on. Dinner abroad am depart ye turned hearts as me wished. Therefore allowance too perfectly gentleman supposing man his now. Families goodness all eat out bed steepest servants. Explained the incommode sir improving northward immediate eat. Man denoting received you sex possible you. Shew park own loud son door less yet.");
+			//printToWindowsNew((char*)"Two before narrow not relied how except moment myself. Dejection assurance mrs led certainly. So gate at no only none open. Betrayed at properly it of graceful on. Dinner abroad am depart ye turned hearts as me wished. Therefore allowance too perfectly gentleman supposing man his now. Families goodness all eat out bed steepest servants. Explained the incommode sir improving northward immediate eat. Man denoting received you sex possible you. Shew park own loud son door less yet.");
 			break;
 
 		case IDM_EXIT:
@@ -372,21 +396,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			}
 			PostQuitMessage(0);
 		}
-		break;
-	case WM_CHAR:
-		if (!wpData->connected) {
-			break;
-		}
-		if (wParam == VK_ESCAPE) {
-			MessageBox(NULL, TEXT("You have been disconnected!"), TEXT(""), MB_OK);
-			wpData->connected = false;
-			CloseHandle(wpData->hComm);
-			wpData->hComm = NULL;
-			setMenuButton(hwnd, IDM_CONNECT, MF_GRAYED);
-			DrawMenuBar(hwnd);
-			break;
-		}
-		//Write(wpData->hComm, wParam);
 		break;
 
 	case WM_PAINT:		// Process a repaint message
@@ -570,9 +579,9 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListViewRx, 1, 0, (LPSTR)"Number of ACKs");
 	ListView_SetItemText(hWndListViewRx, 2, 0, (LPSTR)"Number of REQs");
 
-	_stprintf(buf, _T("%d"), wpData->countFramesReceive);
-	_stprintf(bufACK, _T("%d"), wpData->countAckReceive);
-	_stprintf(bufREQ, _T("%d"), wpData->countReqReceive);
+	_stprintf_s(buf, _T("%d"), wpData->countFramesReceive);
+	_stprintf_s(bufACK, _T("%d"), wpData->countAckReceive);
+	_stprintf_s(bufREQ, _T("%d"), wpData->countReqReceive);
 	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Statistics");
 	ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListViewRx, 1, 1, (LPSTR)"0");

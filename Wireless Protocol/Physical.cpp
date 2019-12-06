@@ -58,16 +58,16 @@ int Bid() {
 	char chRead[2];
 
 	DWORD CommEvent{ 0 };
-	DWORD timeoutToReceive = 500;
+	DWORD timeoutToReceive = 1500;
 	DWORD randomizedTO = 0;
 
 	ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	HANDLE dummy = CreateEvent(NULL, TRUE, FALSE, NULL);
 	char frameENQ[2];
 	frameENQ[0] = 0x00;
 	frameENQ[1] = ENQ;
 	OutputDebugString(_T("\n......Bidding.....\n"));
 	if (wpData->fileUploaded) {
+		OutputDebugString(_T("\n......Sent ENQ.....\n"));
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 		wpData->sentdEnq = true;
 		if (WaitForSingleObject(ackEvent, 1500) == WAIT_OBJECT_0) {
@@ -107,6 +107,7 @@ int Bid() {
 -- NOTES: Opens the serial port "lpszCommName" and returns a handle to the port.
 --
 ----------------------------------------------------------------------------------------------------------------------*/
+
 HANDLE OpenPort(LPCWSTR lpszCommName) {
 	HANDLE hComm;
 	hComm = CreateFile((LPCSTR) lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
@@ -176,6 +177,10 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 
 	if (frame[1] == EOT) {
 		OutputDebugString("Sending an EOT from sendFrame");
+	}
+
+	if (frame[1] == STX) {
+		printToWindowsNew(frame, 0);
 	}
 
 	//running completing asynchronously return false
@@ -304,7 +309,7 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Jameson Chang
 --
 -- PROGRAMMER: Tommy Chang
 --
@@ -339,7 +344,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			while (failedSending) {
 				if (sendFrame(wpData->hComm, dataLink->uploadedFrames[wpData->framePointIndex], 1024)) {
 					++wpData->countFramesSend;
-					_stprintf(buf, _T("%d"), wpData->countFramesSend);
+					_stprintf_s(buf, _T("%d"), wpData->countFramesSend);
 					updateStats((LPSTR)buf, 10);
 					if (waitACK()) {
 						failedSending =false;
@@ -393,13 +398,13 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				if (frameACK[1] == REQ) {
 					OutputDebugString("Sent an REQ from receiving mode!");
 					++wpData->countReqSend;
-					_stprintf(buf, _T("%d"), wpData->countReqSend);
+					_stprintf_s(buf, _T("%d"), wpData->countReqSend);
 					updateStats((LPSTR)buf, 12);
 				}
 				else {
 					OutputDebugString("Sent an ACK from receiving mode!");
 					++wpData->countAckSend;
-					_stprintf(buf, _T("%d"), wpData->countAckSend);
+					_stprintf_s(buf, _T("%d"), wpData->countAckSend);
 					updateStats((LPSTR)buf, 11);
 				}
 				ResetEvent(GOOD_FRAME_EVENT);
@@ -480,7 +485,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 							wpData->status = SEND_MODE;
 							OutputDebugString("Received ACK from IDLE state");
 							++wpData->countAckReceive;
-							_stprintf(buf, _T("%d"), wpData->countAckReceive);
+							_stprintf_s(buf, _T("%d"), wpData->countAckReceive);
 							updateStats((LPSTR)buf, 21);
 						}
 					}
@@ -506,20 +511,20 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						fRes = TRUE;
 					}
 					if (fRes == TRUE && result == 2) {
-						OutputDebugString("Received 2 chars in Send state!");
+						OutputDebugString(_T("\n Received 2 chars in Send state!\n"));
 						control = controlBuffer[1];
 							if (controlBuffer[1] == ACK || controlBuffer[1] == REQ && control == wpData->currentSyncByte) {
 								SetEvent(ackEvent);
 								if (control == ACK) {
-									OutputDebugString("Received an ACK from sending mode");
+									OutputDebugString(_T("\nReceived an ACK from sending mode\n"));
 									++wpData->countAckReceive;
-									_stprintf(buf, _T("%d"), wpData->countAckReceive);
+									_stprintf_s(buf, _T("%d"), wpData->countAckReceive);
 									updateStats((LPSTR)buf, 21);
 								}
 								else {
-									OutputDebugString("Received a REQ from sending mode");
+									OutputDebugString(_T("Received a REQ from sending mode"));
 									++wpData->countReqReceive;
-									_stprintf(buf, _T("%d"), wpData->countReqReceive);
+									_stprintf_s(buf, _T("%d"), wpData->countReqReceive);
 									updateStats((LPSTR)buf, 20);
 								}
 								if (control == REQ) {
@@ -533,7 +538,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					if (!ReadFile(wpData->hComm, frameBuffer, 1024, &result, &ol)) {	
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
-							OutputDebugString("received EOT, going back to IDLE from receieve");
+							OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
 							break;
 						} else if (GetLastError() != ERROR_IO_PENDING) {
 							fRes = FALSE;
@@ -551,7 +556,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					else {
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
-							OutputDebugString("received EOT, going back to IDLE from receieve");
+							OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
 							break;
 						}
 						fRes = TRUE;
@@ -559,7 +564,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					//if (fRes == FALSE && result == 2) {
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
-							OutputDebugString("received EOT, going back to IDLE from receieve");
+							OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
 							break;
 						}
 					//}
@@ -572,15 +577,15 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 								// check the frame
 								// if good, set the event
 								++wpData->countFramesReceive;
-								_stprintf(buf, _T("%d"), wpData->countFramesReceive);
+								_stprintf_s(buf, _T("%d"), wpData->countFramesReceive);
 								updateStats((LPSTR)buf, 20);
 
 								wpData->currentSyncByte = frameBuffer[0];
 								SetEvent(GOOD_FRAME_EVENT);
-								printToWindowsNew(frameBuffer);
+								printToWindowsNew(frameBuffer,1);
 							}
 							else {
-								OutputDebugString("Bad frame, failed checkframe()");
+								OutputDebugString(_T("Bad frame, failed checkframe()"));
 							}
 						}
 					}
