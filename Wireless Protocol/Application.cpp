@@ -159,46 +159,6 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: printToWindow
 --
--- DATE: September 30, 2019
---
--- REVISIONS: none
---
--- DESIGNER: Tommy Chang
---
--- PROGRAMMER: Tommy Chang
---
--- INTERFACE: void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
---				HWND hwnd: Dandle to the window
---				HDC hdc: Device Context of the hwnd
---				char* str: Buffer to be written to the window
---				unsigned int* x: Location of the x-coordinate to write the buffer to the window
---				unsigned int* y: Location of the x-coordinate to write the buffer to the window
--- RETURNS: void
---
--- NOTES:
--- This function prints the character stored in the str buffer to a particular x and y coordinate of the window.
-----------------------------------------------------------------------------------------------------------------------*/
-
-
-void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
-{
-
-	TextOut(wpData->hdc, *x, *y, str, strlen(str));
-	SIZE size;
-	TEXTMETRIC tm;
-	GetTextMetrics(wpData->hdc, &tm);
-	GetTextExtentPoint32(wpData->hdc, str, strlen(str), &size);
-	*x += size.cx; // increment the screen x-coordinate
-	if (*x >= 580 && *x <= 600) { // move down one line if we're near the end of the window
-		*x = 0;
-		*y = *y + tm.tmHeight + tm.tmExternalLeading;
-	}
-	ReleaseDC(wpData->hwnd, wpData->hdc);
-}
-
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: printToWindow
---
 -- DATE: December 5, 2019
 --
 -- REVISIONS: none
@@ -218,13 +178,14 @@ void printToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int*
 //This takes whole chunks of chars (char*) and appends them to the screen.
 void printToWindowsNew(char* str, int window)
 {
-	char incomingBuffer[1022];
+
+	char incomingBuffer[1019];
 	if (window == 0) {
-		for (int i = 2; i < 1021; ++i) {
+		for (int i = 2; i < 1018; ++i) {
 			incomingBuffer[i] = str[i];
 		}
 
-		incomingBuffer[1021] = '\0';
+		incomingBuffer[1018] = '\0';
 		// get new length to determine buffer size
 		int newIn = lstrlen(incomingBuffer);
 		int newLength = GetWindowTextLength(textHwnd) + lstrlen(incomingBuffer) + 2;
@@ -244,11 +205,11 @@ void printToWindowsNew(char* str, int window)
 		SetWindowText(textHwnd, newBuffer);
 	}
 	else {
-		for (int i = 2; i < 1021; ++i) {
+		for (int i = 2; i < 1018; ++i) {
 			incomingBuffer[i] = str[i];
 		}
 
-		incomingBuffer[1021] = '\0';
+		incomingBuffer[1018] = '\0';
 		// get new length to determine buffer size
 		int newIn = lstrlen(incomingBuffer);
 		int newLength = GetWindowTextLength(textHwndRx) + lstrlen(incomingBuffer) + 2;
