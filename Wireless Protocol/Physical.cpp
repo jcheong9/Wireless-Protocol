@@ -55,16 +55,16 @@ int Bid() {
 	char chRead[2];
 
 	DWORD CommEvent{ 0 };
-	DWORD timeoutToReceive = 500;
+	DWORD timeoutToReceive = 1500;
 	DWORD randomizedTO = 0;
-
+	wpData->status = IDLE;
 	ReceiveModeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	HANDLE dummy = CreateEvent(NULL, TRUE, FALSE, NULL);
 	char frameENQ[2];
 	frameENQ[0] = 0x00;
 	frameENQ[1] = ENQ;
-	OutputDebugString(_T("\n......Bidding.....\n"));
 	if (wpData->fileUploaded) {
+		OutputDebugString(_T("\n......Bidding.....\n"));
 		WriteFile(wpData->hComm, frameENQ, 2, NULL, &o1);
 		wpData->sentdEnq = true;
 		if (WaitForSingleObject(ackEvent, 1500) == WAIT_OBJECT_0) {
@@ -75,13 +75,12 @@ int Bid() {
 		//timeout
 		else {
 			wpData->sentdEnq = false;
-			randomizedTO = randomizeTimeOut(500, 1500);
+			randomizedTO = randomizeTimeOut(1000, 1500);
 			OutputDebugString(_T("Timeout After ENQ") + randomizedTO);
-			WaitForSingleObject(enqEvent, randomizedTO);
+			WaitForSingleObject(enqEvent, 20000);
 			ResetEvent(enqEvent);
 		}
 	}
-	wpData->sentdEnq = false;
 	return 1;
 }
 
@@ -179,6 +178,10 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 		OutputDebugString("Sending an EOT from sendFrame");
 	}
 
+	if (frame[1] == STX) {
+		printToWindowsNew(frame, 0);
+	}
+
 	//running completing asynchronously return false
 	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
 	OutputDebugString(_T("\nSend to port.\n"));
@@ -206,8 +209,8 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 int waitACK() {
-	OutputDebugString("We are waiting for ACK");
-	 if(WaitForSingleObject(ackEvent, 5000) == WAIT_OBJECT_0) {
+	OutputDebugString("We are waiting for ACK\n");
+	 if(WaitForSingleObject(ackEvent, 4500) == WAIT_OBJECT_0) {
 		//reset ack event
 		ResetEvent(ackEvent);
 
@@ -253,7 +256,7 @@ int checkREQ() {
 			}
 			REQCounter = 0;
 			wpData->fileUploaded = FALSE;
-			WaitForSingleObject(eotEvent, 1000);
+			WaitForSingleObject(eotEvent, 1500);
 			wpData->status = IDLE;
 			wpData->receivedREQ = FALSE;
 			
@@ -367,7 +370,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					wpData->sentdEnq = false;
 					OutputDebugString(_T("\n......END frame.....\n"));
 					wpData->status = IDLE;
-					if (WaitForSingleObject(enqEvent, 3000) == WAIT_OBJECT_0) {
+					if (WaitForSingleObject(enqEvent, 4500) == WAIT_OBJECT_0) {
 						ResetEvent(enqEvent);
 					}
 
@@ -381,7 +384,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			Bid();
 		}
 		else if (wpData->status == RECEIVE_MODE) {
-			if(WaitForSingleObject(GOOD_FRAME_EVENT, 5000) == WAIT_OBJECT_0) {
+			if(WaitForSingleObject(GOOD_FRAME_EVENT, 4500) == WAIT_OBJECT_0) {
 				char frameACK[2];
 				frameACK[0] = wpData->currentSyncByte;
 				frameACK[1] = wpData->fileUploaded ? REQ : ACK;
@@ -454,7 +457,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						fRes = TRUE;
 					}
 					if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars in IDLE state!");
+						OutputDebugString("Received 2 chars in IDLE state and sent ENQ is false!!");
 						if (controlBuffer[1] == ENQ) {
 							control = controlBuffer[0];
 							sendAcknowledgment(control);
@@ -464,11 +467,11 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						}
 					}
 					else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
-						OutputDebugString("Received 2 chars in IDLE state!");
+						OutputDebugString("Received 2 chars in IDLE state and sent ENQ is true!");
 						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
-							OutputDebugString("Received ACK from IDLE state");
+							OutputDebugString("Received ACK from IDLE state and now I'm sending");
 						}
 					}
 					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
@@ -533,6 +536,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
 							OutputDebugString("received EOT, going back to IDLE from receieve");
+							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 							break;
 						}
 						fRes = TRUE;
@@ -541,20 +545,20 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						if (frameBuffer[1] == EOT) {
 							wpData->status = IDLE;
 							OutputDebugString("received EOT, going back to IDLE from receieve");
+							PurgeComm(wpData->hComm, PURGE_RXCLEAR);
 							break;
 						}
 					//}
 					else if (fRes == TRUE && result == 1024) {
-
 						if (frameBuffer[1] == STX) {
 							dataLink->incomingFrames.push_back(frameBuffer);
 							if (checkFrame()) {
-								OutputDebugString("Received 1024 chars in Receive State!");
+								OutputDebugString("Received 1024 chars, valid frame in Receive State!");
 								// check the frame
 								// if good, set the event
 								wpData->currentSyncByte = frameBuffer[0];
 								SetEvent(GOOD_FRAME_EVENT);
-								printToWindowsNew(frameBuffer);
+								printToWindowsNew(frameBuffer, 1);
 							}
 						}
 					}
@@ -590,7 +594,7 @@ int sendAcknowledgment(char control) {
 
 	}
 	WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol);
-	OutputDebugString("sent ACK or REQ");
+	OutputDebugString("Sent an ACK or REQ after receiving ENQ!");
 	return 0;
 }
 
