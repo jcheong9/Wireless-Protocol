@@ -259,9 +259,9 @@ int checkREQ() {
 	memset(&frameEOT, 0, sizeof(EOT));
 	frameEOT[0] = '\0';
 	frameEOT[1] = EOT;
-	if (wpData->receivedREQ == TRUE && REQCounter < 6) {
+	if (wpData->receivedREQ == TRUE && REQCounter < 3) {
 		REQCounter++;
-		if (REQCounter == 6) {
+		if (REQCounter == 3) {
 			//To do sent EOT .... need packize eot frame
 			REQCounter = 0;
 			if (sendFrame(wpData->hComm, frameEOT, sizeof(frameEOT))) {
@@ -269,8 +269,10 @@ int checkREQ() {
 				//wpData->fileUploaded = false;
 			}
 
-			if (WaitForSingleObject(enqEvent, 2000) == WAIT_OBJECT_0) {
-				//wpData->status = RECEIVE_MODE;
+			wpData->status = IDLE;
+
+			if (WaitForSingleObject(enqEvent, 4000) == WAIT_OBJECT_0) {
+				
 				OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
 				ResetEvent(enqEvent);
 			}			
@@ -336,6 +338,7 @@ int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberof
 ----------------------------------------------------------------------------------------------------------------------*/
 
 DWORD WINAPI ThreadSendProc(LPVOID n) {
+	PurgeComm(wpData->hComm, PURGE_TXCLEAR);
 	OVERLAPPED o1{ 0 };
 	DWORD CommEvent{ 0 };
 	char frameEOT[1024];
@@ -362,7 +365,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						failedSending =false;
 						countErrorAck = 0;
 						wpData->framePointIndex++;
-						checkREQ();
+						//checkREQ();
 					}
 					else {
 						//resent frame
