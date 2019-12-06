@@ -181,13 +181,15 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	DWORD CommEvent{ 0 };
 	OVERLAPPED o1{ 0 };
 
+
+	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
 	if (frame[1] == EOT) {
-		WriteFile(hComm, frame, nBytesToRead, 0, &o1);
+		//WriteFile(hComm, frame, nBytesToRead, 0, &o1);
 		wpData->status = IDLE;
 
 		wpData->sentdEnq = false;
 		wpData->receivedREQ = false;
-		if (WaitForSingleObject(enqEvent, 4000) == WAIT_OBJECT_0) {
+		if (WaitForSingleObject(enqEvent, 2000) == WAIT_OBJECT_0) {
 
 			OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
 			ResetEvent(enqEvent);
@@ -202,7 +204,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	}
 
 	//running completing asynchronously return false
-	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
+
 
 	OutputDebugString(_T("\nSend to port.\n"));
 
@@ -396,9 +398,9 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 				PurgeComm(wpData->hComm, PURGE_TXCLEAR);
 				if (wpData->framePointIndex == dataLink->uploadedFrames.size()) {
 					dataLink->uploadedFrames.clear();
+					wpData->status = IDLE;
 					wpData->fileUploaded = false;
 					wpData->sentdEnq = false;
-					//wpData->status = IDLE;
 					wpData->framePointIndex = 0;					
 					sendFrame(wpData->hComm, frameEOT, 1024);
 					OutputDebugString(_T("\n......END frame.....\n"));
