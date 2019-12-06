@@ -493,9 +493,14 @@ void prepWindow(HINSTANCE hInst) {
 	/*
 	Send section
 	*/
-	textHwnd = CreateWindow("EDIT", "Send",
+
+	HWND textHwndLabel = CreateWindow("STATIC", "Send",
+		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_READONLY,
+		0, 0, 900, 20, wpData->hwnd, NULL, hInst, NULL);
+
+	textHwnd = CreateWindow("EDIT", "",
 		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_MULTILINE | WS_VSCROLL | ES_READONLY,
-		0, 0, 900, 390, wpData->hwnd, NULL, hInst, NULL);
+		0, 20, 900, 370, wpData->hwnd, NULL, hInst, NULL);
 
 	//Send stats table
 	hWndListView = CreateWindow(WC_LISTVIEW, (LPCSTR)L"", WS_CHILD | LVS_REPORT | LVS_EDITLABELS | WS_VISIBLE,
@@ -525,9 +530,14 @@ void prepWindow(HINSTANCE hInst) {
 	/*
 	Receive section
 	*/
-	textHwndRx = CreateWindow("EDIT", "Receive",
+
+	HWND textHwndRxLabel = CreateWindow("STATIC", "Receive",
+		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_READONLY,
+		0, 400, 900, 20, wpData->hwnd, NULL, hInst, NULL);
+
+	textHwndRx = CreateWindow("EDIT", "",
 		WS_VISIBLE | WS_CHILD | SS_LEFT | ES_MULTILINE | WS_VSCROLL | ES_READONLY,
-		0, 400, 900, 390, wpData->hwnd, NULL, hInst, NULL);
+		0, 420, 900, 370, wpData->hwnd, NULL, hInst, NULL);
 
 	//Receive stats table
 	hWndListViewRx = CreateWindow(WC_LISTVIEW, (LPCSTR)L"", WS_CHILD | LVS_REPORT | LVS_EDITLABELS | WS_VISIBLE,
