@@ -15,18 +15,27 @@
 --				LPSTR lspszCmdParam, int nCmdShow)
 --				void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
 --				void ToWindow(HWND hwnd, HDC hdc, char* str, unsigned int* x, unsigned int* y)
+--				LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
+--				void printToWindowsNew(char* str, int window);
+--				BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName);
+--				void addColumns(HWND hwndLV, LVITEM* lvItem);
+--				void updateStats(LPSTR newValue, int rowPosition);
+--				void prepWindow(HINSTANCE hInst);
+--				void updateStats(LPSTR newValue, int rowPosition);
+
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Amir Kbah, Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Amir Kbah, Tommy Chang
 --
 -- NOTES:
 -- Displays Menu items to configure port settings, enter connect mode,
--- view a help message, and exit the application.
+-- Opens a file upload dialog, populates the screen with the required UI components 
+-- such as network traffic stats for the sending and receiving sides
 ----------------------------------------------------------------------------------------------------------------------*/
 
 static HWND hList = NULL;  // List View identifier
@@ -51,16 +60,17 @@ HWND hWndListViewRx;
 char* buff;
 char* buffNewText;
 char* newBuffer;
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WinMain
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Amir Kbah, Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Amir Kbah, Tommy Chang
 --
 -- INTERFACE: int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow)
@@ -74,7 +84,7 @@ char* newBuffer;
 --
 -- NOTES:
 -- This is the user-provided entry point for a graphical Windows-based application
--- Registers the Windows Class and displays the Window
+-- Registers the Windows Class and displays the Window and its components
 ----------------------------------------------------------------------------------------------------------------------*/
 
 Data* wpData = new Data();
@@ -132,13 +142,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: setMenuButton
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Amir Kbah, Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Amir Kbah, Tommy Chang
 --
 -- INTERFACE: void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable)
 --					HWND hwnd - handle to the window
@@ -157,7 +167,7 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 }
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: printToWindow
+-- FUNCTION: printToWindowsNew
 --
 -- DATE: December 5, 2019
 --
@@ -172,10 +182,13 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 -- RETURNS: void
 --
 -- NOTES:
--- This function prints the character stored in the str buffer to a particular x and y coordinate of the window.
+-- This function prints the characters stored in the str buffer to athe corresponding window.
+-- The top half include a Send box that displays the sent characters and the right side of it displays the sending
+-- outgoing traffic details
+-- The bottom half include a Receive box that displays the received characters and the right side of it displays the receiving
+-- incoming traffic details
 ----------------------------------------------------------------------------------------------------------------------*/
 
-//This takes whole chunks of chars (char*) and appends them to the screen.
 void printToWindowsNew(char* str, int window)
 {
 
@@ -236,13 +249,13 @@ void printToWindowsNew(char* str, int window)
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: WndProc
 --
--- DATE: September 30, 2019
+-- DATE: 5 December, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Amir Kbah, Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Amir, Kbah Tommy Chang
 --
 -- INTERFACE: LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 --				HWND hwnd: Handle to the window
@@ -268,9 +281,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	HANDLE readThread = NULL;
 	DWORD threadId;
 	LPCSTR portNumber = (LPCSTR)"COM1";
-
-
-
 
 	switch (Message)
 	{
@@ -321,17 +331,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 					vector<char*> a = dataLink->uploadedFrames;
 					int b = a.size();
 				}
-				//if you want to test check frame function, uncomment the codes below
-				//else {
-				//	dataLink->incomingFrames.push_back(dataLink->uploadedFrames.at(0));
-				//	checkFrame();
-				//}
 			}
 			else {
 				MessageBox(NULL, TEXT("Error occured while trying to select the file."), TEXT("ERROR | Session Layer"), MB_OK);
 			}
 
-			//MessageBox(NULL, ofn.lpstrFile, TEXT("File Name"), MB_OK);
 			break;
 
 		case IDM_DISCONNECT:
@@ -345,9 +349,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_HELP:
-			//MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
-			//TEXT("Help"), MB_OK);
-			//printToWindowsNew((char*)"Two before narrow not relied how except moment myself. Dejection assurance mrs led certainly. So gate at no only none open. Betrayed at properly it of graceful on. Dinner abroad am depart ye turned hearts as me wished. Therefore allowance too perfectly gentleman supposing man his now. Families goodness all eat out bed steepest servants. Explained the incommode sir improving northward immediate eat. Man denoting received you sex possible you. Shew park own loud son door less yet.");
+			//TODO
+			MessageBox(NULL, TEXT("1) Select \"Port Configuration\"\n2) Set your desired settings\n3) Click \"Connect\""),
+			TEXT("Help"), MB_OK);
 			break;
 
 		case IDM_EXIT:
@@ -389,11 +393,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 -- PROGRAMMER: Amir Kbah
 --
 -- INTERFACE: BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName)
+--				HWND hWndListView : window handle for list view
+--				LVCOLUMN cl : This is a structure that contains information about a column in report view.
 --
 -- RETURNS: BOOL
 --
 -- NOTES:
--- This is the default function that is called when a message is dispatched.
+-- This function initialize a column to divide window into multiple sections to display control character stat information and network traffic
 ----------------------------------------------------------------------------------------------------------------------*/
 BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* colName)
 {
@@ -442,11 +448,11 @@ BOOL InitListViewColumns(HWND hWndListView, HINSTANCE hInst, LVCOLUMN cl, char* 
 -- PROGRAMMER: Amir Kbah
 --
 -- INTERFACE: void addColumns(HWND hwndLV, LVITEM* lvItem)
---
+--			LVITEM lvItem : specifies or receives the attrivutes of a list-view item.
 -- RETURNS: void
 --
 -- NOTES:
--- This is the default function that is called when a message is dispatched.
+-- This function specifies the attrubute of lvitem and insert it into list view for stat section.
 ----------------------------------------------------------------------------------------------------------------------*/
 void addColumns(HWND hwndLV, LVITEM* lvItem) {
 	LVITEM lvI;
@@ -470,6 +476,7 @@ void addColumns(HWND hwndLV, LVITEM* lvItem) {
 
 	lvItem = &lvI;
 }
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: prepWindow
 --
@@ -486,8 +493,11 @@ void addColumns(HWND hwndLV, LVITEM* lvItem) {
 -- RETURNS: void
 --
 -- NOTES:
--- This is the default function that is called when a message is dispatched.
+-- This function prepare the window with multiple sections that display different information for send and receive characters.
+-- Send section displays the frame that are sent and receive section displays the frames that are received.
+-- Main purpose is to populate the main window with all the required UI components
 ----------------------------------------------------------------------------------------------------------------------*/
+
 void prepWindow(HINSTANCE hInst) {
 	/*
 	Send section
@@ -562,6 +572,8 @@ void prepWindow(HINSTANCE hInst) {
 	ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)"0");
 	ListView_SetItemText(hWndListViewRx, 3, 1, (LPSTR)"0");
 }
+
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: updateStats
 --
@@ -578,8 +590,9 @@ void prepWindow(HINSTANCE hInst) {
 -- RETURNS: void
 --
 -- NOTES:
--- This is the default function that is called when a message is dispatched.
+-- This function updates the statistics for control characters.
 ----------------------------------------------------------------------------------------------------------------------*/
+
 void updateStats(LPSTR newValue, int rowPosition) {
 	switch (rowPosition) {
 	case (10):

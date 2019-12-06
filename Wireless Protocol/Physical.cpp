@@ -43,10 +43,7 @@ int REQCounter = 0;
 --
 -- DESIGNER: Amir Kbah
 --
--- PROGRAMMER: Amir Kbah
---
--- INTERFACE: HANDLE OpenPort(LPCWSTR lpszCommName)
---			  LPCWSTR lpszCommName: the name of the Com port to open
+-- PROGRAMMER: Amir Kbah		  
 --
 -- RETURNS: int
 --
@@ -97,7 +94,7 @@ int Bid() {
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: OpenPort
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
@@ -128,7 +125,7 @@ HANDLE OpenPort(LPCWSTR lpszCommName) {
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: InitializePort
 --
--- DATE: September 30, 2019
+-- DATE: December 5, 2019
 --
 -- REVISIONS: none
 --
@@ -173,7 +170,8 @@ int InitializePort(HANDLE hComm, COMMCONFIG cc, DWORD dwSize) {
 --
 -- RETURNS: int 1 successfully sent; int 0 failed to sent.
 --
--- NOTES: Writes the frame received from datalink. Check end of transmition and set status to IDLE
+-- NOTES: Writes the frame received from datalink. Check end of transmition and set status to IDLE. Display
+-- the send frame on the screen.
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 
@@ -218,18 +216,19 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Jameson Cheong
 --
 -- PROGRAMMER: Jameson Cheong
 --
 -- INTERFACE: int waitACK()
--- 
+--
 --
 -- RETURNS: int 1 when receive ACK; int 0 when no ACK
 --
--- NOTES: Waits for an ACK using event driven. 
+-- NOTES: Waits for an ACK using event driven.
 --
 ----------------------------------------------------------------------------------------------------------------------*/
+
 int waitACK() {
 	OutputDebugString("We are waiting for ACK");
 	 if(WaitForSingleObject(ackEvent, 4500) == WAIT_OBJECT_0) {
@@ -249,7 +248,7 @@ int waitACK() {
 --
 -- REVISIONS: none
 --
--- DESIGNER: Jameson Cheong
+-- DESIGNER: Jameson Cheong, Tommy Chang
 --
 -- PROGRAMMER: Jameson Cheong
 --
@@ -258,10 +257,11 @@ int waitACK() {
 --
 -- RETURNS: int 1 when receive ACK; int 0 when no ACK
 --
--- NOTES: Waits for an ACK using event driven.
+-- NOTES: This function check REQ conditions. The function check file is staged and count the frames received then
+-- sent EOT. After EOT, the thread sleep for 2 second.
 --
 ----------------------------------------------------------------------------------------------------------------------*/
-//return 0 no REQ or REQCounter < 3
+
 
 int checkREQ() {
 	char frameEOT[1024];
@@ -293,57 +293,24 @@ int checkREQ() {
 
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: Read
+-- FUNCTION: ThreadSendProc
 --
 -- DATE: September 30, 2019
 --
 -- REVISIONS: none
 --
--- DESIGNER: Tommy Chang
+-- DESIGNER: Jameson Cheong, Tommy Chang
 --
--- PROGRAMMER: Tommy Chang
+-- PROGRAMMER: Jameson Cheong
 --
--- INTERFACE: Read(HANDLE hComm, char *str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1)
---
---					HANDLE hComm: handle to the port to read from
---					char *str: buffer to store the character
---					DWORD nNumberofBytesToRead: number of bytes to read
---					LPDWORD lpNumberofBytesRead: number of bytes actually read (NULL)
---					LPOVERLAPPED o1: overlapped structure
---
--- RETURNS: int
---
--- NOTES: Reads nNumberofBytestoRead (currently 1 byte, for one character) from the handle, and stores it in the str buffer.
---
-----------------------------------------------------------------------------------------------------------------------*/
-
-int Read(HANDLE hComm, char* str, DWORD nNumberofBytesToRead, LPDWORD lpNumberofBytesRead, LPOVERLAPPED o1) {
-	if (ReadFile(hComm, str, nNumberofBytesToRead, NULL, o1)) {
-		return 1;
-	}
-	return 0;
-}
-
-
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: ReadFunc
---
--- DATE: September 30, 2019
---
--- REVISIONS: none
---
--- DESIGNER: Jameson Chang
---
--- PROGRAMMER: Tommy Chang
---
--- INTERFACE: DWORD WINAPI ReadFunc(LPVOID n)
---				LPVOID n: structure passed in to the thread
+-- INTERFACE: DWORD WINAPI ThreadSendProc(LPVOID n)
 --
 -- RETURNS: DWORD
 --
 -- NOTES: Function that is executed by a thread created when user enters "connect" mode for the first time.
--- Stays in an infinite loop, and monitors if a character was received and placed in the input buffer.
--- If there is a character in the input buffer, receives the character into the str buffer by calling Read 
+-- Stays in an infinite loop, and monitors the status. There are three status (IDLE, SEND_MODE, RECEIVE_MODE)
+-- this function monitor.
+--
 ----------------------------------------------------------------------------------------------------------------------*/
 
 DWORD WINAPI ThreadSendProc(LPVOID n) {
@@ -447,7 +414,27 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 }
 
 
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: ThreadReceiveProc
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER:  Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- INTERFACE: DWORD WINAPI ThreadReceiveProc(LPVOID n)
+--
+-- RETURNS: DWORD
+--
+-- NOTES: Function that is executed by a thread created when user enters "connect" mode for the first time.
+-- Stays in an infinite loop, and monitors the status. There are three status (IDLE, SEND_MODE, RECEIVE_MODE)
+-- this function monitor.
+-- this functions main purpose is to react to events coming into the input buffer based on state of the program
+--
+----------------------------------------------------------------------------------------------------------------------*/
 
 DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	unsigned static int x = 0;
@@ -600,13 +587,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 						}
 						fRes = TRUE;
 					}
-					//if (fRes == FALSE && result == 2) {
-						//if (frameBuffer[1] == EOT) {
-						//	wpData->status = IDLE;
-						//	OutputDebugString(_T("received EOT, going back to IDLE from receieve"));
-						//	break;
-						//}
-					//}
+
 					if (fRes == TRUE && result == 1024) {
 
 						if (frameBuffer[1] == STX) {
@@ -639,6 +620,25 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 	return 1;
 }
 
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendAcknowledgement
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER:  Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- INTERFACE: int sendAcknowledgment(char control)
+--
+-- RETURNS: DWORD
+--
+-- NOTES: Sends acknowledgment when the application changes state from IDLE
+--
+----------------------------------------------------------------------------------------------------------------------*/
 
 
 
@@ -673,9 +673,48 @@ int sendAcknowledgment(char control) {
 	return 0;
 }
 
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: randomizeTimeout
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER:  Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- int randomizeTimeOut(int range_min, int range_max)
+--
+-- RETURNS: int
+--
+-- NOTES: returns a random number between an upper bound and a lower band,
+-- used to generate a randmoized timeout wait time
+--
+----------------------------------------------------------------------------------------------------------------------*/ 
 int randomizeTimeOut(int range_min, int range_max){
 	return (double)rand() / (RAND_MAX + 1) * (range_max - range_min) + range_min;
 }
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: swapSyncByte
+--
+-- DATE: December 5, 2019
+--
+-- REVISIONS: none
+--
+-- DESIGNER:  Tommy Chang
+--
+-- PROGRAMMER: Tommy Chang
+--
+-- int swapSyncByte()
+--
+-- RETURNS: void
+--
+-- NOTES: Unused for now
+--
+----------------------------------------------------------------------------------------------------------------------*/
 
 void swapSyncByte() {
 	wpData->currentSyncByte = wpData->currentSyncByte == 0x00 ? 0xFF : 0x00;
