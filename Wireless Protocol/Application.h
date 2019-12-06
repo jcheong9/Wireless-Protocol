@@ -24,6 +24,13 @@ struct Data {
 	bool sentdEnq;
 	char currentSyncByte = 0;
 	int framePointIndex = 0;
+	int countAckReceive = 0;
+	int countFramesReceive = 0;
+	int countReqReceive = 0;
+	int countAckSend = 0;
+	int countFramesSend = 0;
+	int countReqSend = 0;
+
 	HWND labels;
 };
 extern Data* wpData;
