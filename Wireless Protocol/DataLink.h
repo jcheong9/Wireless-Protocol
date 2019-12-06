@@ -14,7 +14,7 @@ void initialize_frame();
 struct DataLink {
 	vector<char*> uploadedFrames;
 	vector<char*> incomingFrames;
-	vector<string> validDataword;
+	string validDataword;
 	int charIndex = 0;
 	int syncFlag = 0;
 	int frameIndex = -1;

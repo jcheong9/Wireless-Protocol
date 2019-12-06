@@ -262,8 +262,12 @@ int checkREQ() {
 			wpData->status = IDLE;
 			wpData->receivedREQ = FALSE;
 
-			WaitForSingleObject(enqEvent, 5000);
-			ResetEvent(enqEvent);
+			if (WaitForSingleObject(enqEvent, 2000) == WAIT_OBJECT_0) {
+				wpData->status = RECEIVE_MODE;
+				OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
+				ResetEvent(enqEvent);
+			}
+			
 			
 			return 1;
 		}
@@ -373,6 +377,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 			if (wpData->status == SEND_MODE) {
 				PurgeComm(wpData->hComm, PURGE_TXCLEAR);
 				if (wpData->framePointIndex == dataLink->uploadedFrames.size()) {
+					dataLink->uploadedFrames.clear();
 					wpData->fileUploaded = false;
 					wpData->sentdEnq = false;
 					wpData->status = IDLE;
@@ -474,7 +479,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
 						OutputDebugString("Received 2 chars in IDLE state!");
 						if (controlBuffer[1] == ENQ) {
-							//SetEvent(enqEvent);
+							SetEvent(enqEvent);
 							control = controlBuffer[0];
 							sendAcknowledgment(control);
 							wpData->status = RECEIVE_MODE;
@@ -483,6 +488,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					}
 					else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
 						OutputDebugString("Received 2 chars in IDLE state BUT I SENT ENQ!");
+						//SetEvent(enqEvent);
 						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;

@@ -156,9 +156,8 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 	DrawMenuBar(hwnd);
 }
 
-
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: printToWindowsNew
+-- FUNCTION: printToWindow
 --
 -- DATE: December 5, 2019
 --
@@ -179,13 +178,14 @@ void setMenuButton(HWND hwnd, UINT uIDEnableItem, UINT uEnable) {
 //This takes whole chunks of chars (char*) and appends them to the screen.
 void printToWindowsNew(char* str, int window)
 {
-	char incomingBuffer[1022];
+
+	char incomingBuffer[1019];
 	if (window == 0) {
-		for (int i = 2; i < 1021; ++i) {
+		for (int i = 2; i < 1018; ++i) {
 			incomingBuffer[i] = str[i];
 		}
 
-		incomingBuffer[1021] = '\0';
+		incomingBuffer[1018] = '\0';
 		// get new length to determine buffer size
 		int newIn = lstrlen(incomingBuffer);
 		int newLength = GetWindowTextLength(textHwnd) + lstrlen(incomingBuffer) + 2;
@@ -205,11 +205,11 @@ void printToWindowsNew(char* str, int window)
 		SetWindowText(textHwnd, newBuffer);
 	}
 	else {
-		for (int i = 2; i < 1021; ++i) {
+		for (int i = 2; i < 1018; ++i) {
 			incomingBuffer[i] = str[i];
 		}
 
-		incomingBuffer[1021] = '\0';
+		incomingBuffer[1018] = '\0';
 		// get new length to determine buffer size
 		int newIn = lstrlen(incomingBuffer);
 		int newLength = GetWindowTextLength(textHwndRx) + lstrlen(incomingBuffer) + 2;
