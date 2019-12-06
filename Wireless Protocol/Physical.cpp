@@ -491,21 +491,12 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					else if (fRes == TRUE && result == 2 && wpData->sentdEnq) {
 						OutputDebugString("Received 2 chars in IDLE state BUT I SENT ENQ!");
 						//SetEvent(enqEvent);
-						if (controlBuffer[1] == ACK || controlBuffer[1] == REQ) {
+						if (controlBuffer[1] == ACK) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
 							OutputDebugString("Received ACK from IDLE state");
-
-							if (controlBuffer[1] == ACK ) {
-								_stprintf_s(buf, _T("%d"), ++wpData->countAckReceive);
-								updateStats((LPSTR)buf, 21);
-							}
-							else if (controlBuffer[1] == REQ){
-								_stprintf_s(buf, _T("%d"), ++wpData->countReqReceive);
-								updateStats((LPSTR)buf, 22);
-							}
-
-
+							_stprintf_s(buf, _T("%d"), ++wpData->countAckReceive);
+							updateStats((LPSTR)buf, 21);
 						}
 					}
 					PurgeComm(wpData->hComm, PURGE_RXCLEAR);
@@ -628,14 +619,9 @@ int sendAcknowledgment(char control) {
 	OVERLAPPED ol{ 0 };
 	char acknowledge[2];
 	acknowledge[0] = control;
-	if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == false) {
+	if (wpData->status == RECEIVE_MODE) {
 		OutputDebugString("Received mode ACK");
 		acknowledge[1] = ACK;
-	}
-	else if (wpData->status == RECEIVE_MODE && wpData->fileUploaded == true) {
-		acknowledge[1] = REQ;
-		OutputDebugString("Received mode REQ");
-
 	}
 	else if (wpData->status == IDLE) {
 		acknowledge[1] = ACK;
@@ -644,14 +630,9 @@ int sendAcknowledgment(char control) {
 	}
 	WriteFile(wpData->hComm, &acknowledge, 2, 0, &ol);
 	OutputDebugString("sent ACK or REQ");
-	if (acknowledge[1] == ACK) {
-		_stprintf_s(buf, _T("%d"), ++wpData->countAckSend);
-		updateStats((LPSTR)buf, 11);
-	}
-	else if (acknowledge[1] == REQ) {
-		_stprintf_s(buf, _T("%d"), ++wpData->countReqSend);
-		updateStats((LPSTR)buf, 12);
-	}
+	_stprintf_s(buf, _T("%d"), ++wpData->countAckSend);
+	updateStats((LPSTR)buf, 11);
+
 	return 0;
 }
 
