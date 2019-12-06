@@ -181,8 +181,13 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 	DWORD CommEvent{ 0 };
 	OVERLAPPED o1{ 0 };
 
-	if (frame[1] == EOT) {		
+	if (frame[1] == EOT) {
+		WriteFile(hComm, frame, nBytesToRead, 0, &o1);
+		wpData->status = IDLE;
+		wpData->sentdEnq = false;
+		wpData->receivedREQ = false;
 		OutputDebugString("Sending an EOT from sendFrame");
+		return 1;
 	}
 
 	if (frame[1] == STX) {
@@ -191,6 +196,7 @@ int sendFrame(HANDLE hComm, char* frame, DWORD nBytesToRead) {
 
 	//running completing asynchronously return false
 	WriteFile(hComm, frame, nBytesToRead, 0, &o1);
+
 	OutputDebugString(_T("\nSend to port.\n"));
 
 	return 1;
@@ -263,19 +269,13 @@ int checkREQ() {
 				//wpData->fileUploaded = false;
 			}
 
-			wpData->status = IDLE;
-			wpData->receivedREQ = FALSE;
-
 			if (WaitForSingleObject(enqEvent, 2000) == WAIT_OBJECT_0) {
-				wpData->status = RECEIVE_MODE;
+				//wpData->status = RECEIVE_MODE;
 				OutputDebugString(_T("GOT AN ENQ WHILE SLEEPING"));
 				ResetEvent(enqEvent);
-			}
-			
-			
+			}			
 			return 1;
 		}
-
 	}
 	return 0;
 }
@@ -357,6 +357,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					++wpData->countFramesSend;
 					_stprintf_s(buf, _T("%d"), wpData->countFramesSend);
 					updateStats((LPSTR)buf, 10);
+
 					if (waitACK()) {
 						failedSending =false;
 						countErrorAck = 0;
@@ -372,11 +373,12 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 						updateStats((LPSTR)buf, 13);
 						if (countErrorAck >= 3) {
 							wpData->status = IDLE;
+							wpData->receivedREQ = false;
 							failedSending = false;
 							wpData->sentdEnq = false;
 							errorAck = true;
 							OutputDebugString("\n......Goes to IDLE when 3 errors.....\n");
-\						}
+						}
 					}
 				}
 			}
@@ -386,7 +388,7 @@ DWORD WINAPI ThreadSendProc(LPVOID n) {
 					dataLink->uploadedFrames.clear();
 					wpData->fileUploaded = false;
 					wpData->sentdEnq = false;
-					wpData->status = IDLE;
+					//wpData->status = IDLE;
 					wpData->framePointIndex = 0;					
 					sendFrame(wpData->hComm, frameEOT, 1024);
 					OutputDebugString(_T("\n......END frame.....\n"));
