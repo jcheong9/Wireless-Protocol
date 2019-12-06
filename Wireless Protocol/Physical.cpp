@@ -259,8 +259,9 @@ int checkREQ() {
 			}
 			wpData->status = IDLE;
 			wpData->receivedREQ = FALSE;
-			WaitForSingleObject(enqEvent, 5000);
+			WaitForSingleObject(enqEvent, 50000);
 			ResetEvent(enqEvent);
+
 			return 1;
 		}
 
@@ -472,10 +473,10 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 					if (fRes == TRUE && result == 2 && !wpData->sentdEnq) {
 						OutputDebugString("Received 2 chars in IDLE state!");
 						if (controlBuffer[1] == ENQ) {
-							SetEvent(enqEvent);
 							control = controlBuffer[0];
 							sendAcknowledgment(control);
 							wpData->status = RECEIVE_MODE;
+							SetEvent(enqEvent);
 							OutputDebugString("Received ENQ from IDLE state and now I'm receiving");
 						}
 					}
