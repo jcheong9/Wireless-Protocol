@@ -480,7 +480,7 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 							SetEvent(ackEvent);
 							wpData->status = SEND_MODE;
 							OutputDebugString("Received ACK from IDLE state");
-							wpData->countAckReceive;
+							++wpData->countAckReceive;
 							_stprintf(buf, _T("%d"), wpData->countAckReceive);
 							updateStats((LPSTR)buf, 21);
 						}
@@ -518,9 +518,9 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 									updateStats((LPSTR)buf, 21);
 								}
 								else {
-									OutputDebugString("Received a REQ frmo sending mode");
-									++wpData->countFramesReceive;
-									_stprintf(buf, _T("%d"), wpData->countFramesReceive);
+									OutputDebugString("Received a REQ from sending mode");
+									++wpData->countReqReceive;
+									_stprintf(buf, _T("%d"), wpData->countReqReceive);
 									updateStats((LPSTR)buf, 20);
 								}
 								if (control == REQ) {
@@ -572,6 +572,10 @@ DWORD WINAPI ThreadReceiveProc(LPVOID n) {
 								OutputDebugString("Received 1024 chars in Receive State!");
 								// check the frame
 								// if good, set the event
+								++wpData->countFramesReceive;
+								_stprintf(buf, _T("%d"), wpData->countFramesReceive);
+								updateStats((LPSTR)buf, 20);
+
 								wpData->currentSyncByte = frameBuffer[0];
 								SetEvent(GOOD_FRAME_EVENT);
 								printToWindowsNew(frameBuffer);

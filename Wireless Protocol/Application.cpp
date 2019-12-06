@@ -471,9 +471,6 @@ void prepWindow(HINSTANCE hInst) {
 	TCHAR bufACK[3];
 	TCHAR bufREQ[3];
 
-	_stprintf(buf, _T("%d"), wpData->countFramesSend);
-	_stprintf(bufACK, _T("%d"), wpData->countAckSend);
-	_stprintf(bufREQ, _T("%d"), wpData->countReqSend);
 
 	ListView_SetItemText(hWndListView, 0, 0, (LPSTR)"Number of Frames");
 	ListView_SetItemText(hWndListView, 1, 0, (LPSTR)"Number of ACKs");
@@ -508,9 +505,9 @@ void prepWindow(HINSTANCE hInst) {
 	_stprintf(bufACK, _T("%d"), wpData->countAckReceive);
 	_stprintf(bufREQ, _T("%d"), wpData->countReqReceive);
 	InitListViewColumns(hWndListViewRx, hInst, rcl, (LPSTR)"Receive Statistics");
-	ListView_SetItemText(hWndListView, 0, 1, (LPSTR)"0");
-	ListView_SetItemText(hWndListView, 1, 1, (LPSTR)"0");
-	ListView_SetItemText(hWndListView, 2, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListViewRx, 0, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListViewRx, 1, 1, (LPSTR)"0");
+	ListView_SetItemText(hWndListViewRx, 2, 1, (LPSTR)"0");
 }
 
 void updateStats(LPSTR newValue, int rowPosition) {
